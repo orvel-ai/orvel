@@ -9,6 +9,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@orvel/local": "workspace:*",
+    "@orvel/openai": "workspace:*",
+    "@orvel/sdk": "workspace:*",
     "next": "16.3.5",
     "react": "19.3.0",
     "react-dom": "19.3.0"

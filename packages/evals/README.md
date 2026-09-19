@@ -1,5 +1,5 @@
 # `@orvel/evals`
 
-Contracts for repeatable tests of agent behavior. Evaluators return a normalized
-result without prescribing a model-based judge, assertion library, or test data
-store.
+Contracts for repeatable tests of agent behavior. v0.1 includes a simple,
+case-insensitive contains-text evaluator and persisted eval-run records. It is
+intentionally not an LLM-as-a-judge or general quality evaluator.

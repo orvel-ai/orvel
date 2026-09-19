@@ -1,0 +1,374 @@
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
+
+import {
+  createEvalAction,
+  deleteTeachingAction,
+  runEvalAction,
+  saveTeachingAction,
+  sendMessageAction,
+  startConversationAction,
+} from '../../actions'
+import { isProviderConfigured, orvel } from '../../lib/orvel'
+
+type PageProps = {
+  params: Promise<{ agentId: string }>
+  searchParams: Promise<{
+    tab?: string
+    conversation?: string
+    error?: string
+    notice?: string
+  }>
+}
+
+function time(value: Date): string {
+  return new Intl.DateTimeFormat('en', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(value)
+}
+
+export default async function AgentPage({ params, searchParams }: PageProps) {
+  const { agentId } = await params
+  const [agent, parameters] = await Promise.all([
+    orvel.getAgent(agentId),
+    searchParams,
+  ])
+  if (!agent) notFound()
+
+  const tab =
+    parameters.tab === 'teachings' || parameters.tab === 'evals'
+      ? parameters.tab
+      : 'chat'
+  const [conversations, teachings, evals, evalRuns] = await Promise.all([
+    orvel.listConversations(agentId),
+    orvel.listTeachings(agentId),
+    orvel.listEvals(agentId),
+    orvel.listEvalRuns(agentId),
+  ])
+  const conversation =
+    conversations.find((item) => item.id === parameters.conversation) ??
+    conversations[0]
+  const messages = conversation ? await orvel.listMessages(conversation.id) : []
+
+  return (
+    <main className="studio-shell">
+      <header className="masthead">
+        <Link className="wordmark" href="/">
+          Orvel
+        </Link>
+        <Link className="back-link" href="/">
+          All agents
+        </Link>
+      </header>
+
+      <section className="agent-header">
+        <div>
+          <p className="eyebrow">Agent workspace</p>
+          <h1>{agent.name}</h1>
+          <p>{agent.description ?? agent.instructions}</p>
+        </div>
+        <div className="model-chip">
+          {agent.brain.provider} · {agent.brain.model}
+        </div>
+      </section>
+
+      <nav className="tabs" aria-label="Agent workspace sections">
+        <Link
+          className={tab === 'chat' ? 'active' : ''}
+          href={`/agents/${agentId}`}
+        >
+          Chat
+        </Link>
+        <Link
+          className={tab === 'teachings' ? 'active' : ''}
+          href={`/agents/${agentId}?tab=teachings`}
+        >
+          Teachings ({teachings.length})
+        </Link>
+        <Link
+          className={tab === 'evals' ? 'active' : ''}
+          href={`/agents/${agentId}?tab=evals`}
+        >
+          Evals
+        </Link>
+      </nav>
+
+      {parameters.error ? (
+        <p className="alert" role="alert">
+          {parameters.error}
+        </p>
+      ) : null}
+      {parameters.notice ? (
+        <p className="notice-success" role="status">
+          {parameters.notice}
+        </p>
+      ) : null}
+
+      {tab === 'chat' ? (
+        <section className="workspace-grid">
+          <aside className="conversation-sidebar">
+            <form action={startConversationAction}>
+              <input type="hidden" name="agentId" value={agentId} />
+              <button type="submit" className="secondary-button">
+                New conversation
+              </button>
+            </form>
+            {conversations.length === 0 ? (
+              <p className="empty-state">Start a conversation to chat.</p>
+            ) : null}
+            {conversations.map((item) => (
+              <Link
+                className={
+                  item.id === conversation?.id
+                    ? 'conversation active'
+                    : 'conversation'
+                }
+                href={`/agents/${agentId}?conversation=${item.id}`}
+                key={item.id}
+              >
+                Conversation
+                <br />
+                <small>{time(item.updatedAt)}</small>
+              </Link>
+            ))}
+          </aside>
+
+          <div className="chat-panel">
+            {!isProviderConfigured ? (
+              <p className="setup-message">
+                OpenAI is not configured. Add <code>OPENAI_API_KEY</code> to{' '}
+                <code>.env.local</code> and restart Studio before sending a
+                message.
+              </p>
+            ) : null}
+            {!conversation ? (
+              <div className="empty-chat">
+                <h2>Ready when you are</h2>
+                <p>Create a conversation, then ask SupportBot about refunds.</p>
+              </div>
+            ) : (
+              <>
+                <div className="messages">
+                  {messages.length === 0 ? (
+                    <p className="empty-state">No messages yet.</p>
+                  ) : null}
+                  {messages.map((message, index) => {
+                    const previousUser = messages
+                      .slice(0, index)
+                      .reverse()
+                      .find((item) => item.role === 'user')
+                    return (
+                      <article
+                        className={`message ${message.role}`}
+                        key={message.id}
+                      >
+                        <p className="message-role">
+                          {message.role === 'assistant' ? agent.name : 'You'}
+                        </p>
+                        <p>{message.content}</p>
+                        {message.teachingIds?.length ? (
+                          <small>
+                            Used {message.teachingIds.length} relevant teaching
+                            example{message.teachingIds.length === 1 ? '' : 's'}
+                            .
+                          </small>
+                        ) : null}
+                        {message.role === 'assistant' && previousUser ? (
+                          <details className="teach-control">
+                            <summary>Teach</summary>
+                            <form
+                              action={saveTeachingAction}
+                              className="form-stack compact-form"
+                            >
+                              <input
+                                type="hidden"
+                                name="agentId"
+                                value={agentId}
+                              />
+                              <input
+                                type="hidden"
+                                name="conversationId"
+                                value={conversation.id}
+                              />
+                              <input
+                                type="hidden"
+                                name="userInput"
+                                value={previousUser.content}
+                              />
+                              <input
+                                type="hidden"
+                                name="originalResponse"
+                                value={message.content}
+                              />
+                              <p className="original-response">
+                                Original response: {message.content}
+                              </p>
+                              <label>
+                                Corrected response
+                                <textarea
+                                  name="correctedResponse"
+                                  required
+                                  rows={3}
+                                  defaultValue={message.content}
+                                />
+                              </label>
+                              <label>
+                                Why? <span>optional</span>
+                                <textarea
+                                  name="explanation"
+                                  rows={2}
+                                  placeholder="Explain the correction for future responses."
+                                />
+                              </label>
+                              <button type="submit">Save teaching</button>
+                            </form>
+                          </details>
+                        ) : null}
+                      </article>
+                    )
+                  })}
+                </div>
+                <form action={sendMessageAction} className="composer">
+                  <input type="hidden" name="agentId" value={agentId} />
+                  <input
+                    type="hidden"
+                    name="conversationId"
+                    value={conversation.id}
+                  />
+                  <textarea
+                    name="content"
+                    required
+                    rows={3}
+                    placeholder="Ask a question…"
+                  />
+                  <button type="submit" disabled={!isProviderConfigured}>
+                    Send
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
+        </section>
+      ) : null}
+
+      {tab === 'teachings' ? (
+        <section className="panel teachings-panel">
+          <div>
+            <p className="eyebrow">Saved corrections</p>
+            <h2>Teachings</h2>
+            <p>Only relevant teachings are retrieved for a later question.</p>
+          </div>
+          {teachings.length === 0 ? (
+            <p className="empty-state">
+              No teachings saved yet. Use Teach on an assistant response.
+            </p>
+          ) : null}
+          {teachings.map((teaching) => (
+            <article className="teaching-card" key={teaching.id}>
+              <small>{time(teaching.createdAt)}</small>
+              <h3>User asked</h3>
+              <p>{teaching.userInput}</p>
+              <h3>Original response</h3>
+              <p>{teaching.originalResponse}</p>
+              <h3>Correction</h3>
+              <p>{teaching.correctedResponse}</p>
+              {teaching.explanation ? (
+                <>
+                  <h3>Why</h3>
+                  <p>{teaching.explanation}</p>
+                </>
+              ) : null}
+              <form action={deleteTeachingAction}>
+                <input type="hidden" name="agentId" value={agentId} />
+                <input type="hidden" name="teachingId" value={teaching.id} />
+                <button className="text-button" type="submit">
+                  Delete
+                </button>
+              </form>
+            </article>
+          ))}
+        </section>
+      ) : null}
+
+      {tab === 'evals' ? (
+        <section className="two-column evals-layout">
+          <form action={createEvalAction} className="panel form-stack">
+            <div>
+              <p className="eyebrow">Deterministic eval</p>
+              <h2>Add an eval</h2>
+              <p>
+                v0.1 checks whether a response contains expected text. It is not
+                a judgment of general answer quality.
+              </p>
+            </div>
+            <input type="hidden" name="agentId" value={agentId} />
+            <label>
+              Input
+              <textarea
+                name="input"
+                required
+                rows={3}
+                placeholder="When should I expect my refund?"
+              />
+            </label>
+            <label>
+              Expected text
+              <textarea
+                name="expected"
+                required
+                rows={2}
+                placeholder="5–7 business days"
+              />
+            </label>
+            <button type="submit">Save eval</button>
+          </form>
+          <div className="panel">
+            <p className="eyebrow">Saved evals</p>
+            <h2>Run checks</h2>
+            {evals.length === 0 ? (
+              <p className="empty-state">No evals yet.</p>
+            ) : (
+              evals.map((evalCase) => (
+                <article className="eval-card" key={evalCase.id}>
+                  <p>
+                    <strong>Input:</strong> {evalCase.input}
+                  </p>
+                  <p>
+                    <strong>Expected:</strong> {evalCase.expected}
+                  </p>
+                  <form action={runEvalAction}>
+                    <input type="hidden" name="agentId" value={agentId} />
+                    <input type="hidden" name="evalId" value={evalCase.id} />
+                    <button type="submit" disabled={!isProviderConfigured}>
+                      Run eval
+                    </button>
+                  </form>
+                </article>
+              ))
+            )}
+          </div>
+          <div className="panel eval-runs">
+            <p className="eyebrow">Results</p>
+            <h2>Recent runs</h2>
+            {evalRuns.length === 0 ? (
+              <p className="empty-state">No eval runs yet.</p>
+            ) : (
+              evalRuns.map((run) => (
+                <article className="eval-card" key={run.id}>
+                  <p className={run.result.passed ? 'passed' : 'failed'}>
+                    {run.result.passed ? 'Passed' : 'Failed'}
+                  </p>
+                  <p>
+                    <strong>Actual:</strong> {run.actual}
+                  </p>
+                  <small>{run.result.message}</small>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
+      ) : null}
+    </main>
+  )
+}

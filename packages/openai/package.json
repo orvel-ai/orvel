@@ -1,6 +1,6 @@
 {
-  "name": "@orvel/sdk",
-  "version": "0.0.0",
+  "name": "@orvel/openai",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -20,11 +20,6 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@orvel/evals": "workspace:*",
-    "@orvel/knowledge": "workspace:*",
-    "@orvel/memory": "workspace:*",
-    "@orvel/runtime": "workspace:*",
-    "@orvel/skills": "workspace:*",
-    "@orvel/training": "workspace:*"
+    "@orvel/runtime": "workspace:*"
   }
 }

@@ -1,7 +1,8 @@
 # Orvel Studio
 
-Orvel Studio is the future visual workspace for creating, teaching, testing, and
-managing agents. It currently contains only the initial Next.js App Router shell;
-no agent-management workflows are implemented yet.
+Orvel Studio is the v0.1 local workspace for creating, teaching, testing, and
+managing agents. It supports Agents, Chat, Teachings, and Evals using server
+components and server actions; core behavior remains in the SDK and packages.
 
-From the repository root, run `pnpm dev` to start Studio.
+Copy the root `.env.example` to `apps/studio/.env.local`, set `OPENAI_API_KEY`,
+then run `pnpm dev` from the repository root.

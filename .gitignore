@@ -8,4 +8,5 @@ coverage/
 .env
 .env.*
 !.env.example
+.orvel/
 .DS_Store

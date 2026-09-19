@@ -7,14 +7,12 @@ contracts and one small execution path.
 ## Dependency direction
 
 ```text
-Studio ──► SDK ──► focused packages
-                    │
-                    ├── runtime
-                    ├── memory
-                    ├── knowledge
-                    ├── skills
-                    ├── training
-                    └── evals
+Studio server ──► SDK ──► runtime, training, evals
+      │                         │
+      ├── local store ───────────┤
+      └── OpenAI adapter ────────┘
+
+Other focused packages: memory, knowledge, skills
 ```
 
 The focused packages do not depend on each other today. The SDK is the public
@@ -28,22 +26,28 @@ provider-neutral request into a provider implementation and returns a normalized
 response. The runtime chooses a registered provider from the agent's brain
 configuration and delegates generation.
 
-Provider SDKs, credentials, HTTP transports, retry policies, streaming, tool
-loops, and persistence are deliberately outside the initial runtime. They should
-be introduced only when a concrete end-to-end use case establishes the required
-contract.
+The runtime now composes instructions, explicit runtime context, and conversation
+messages before delegating to a provider. It does not know how teachings are
+retrieved, how data is persisted, or how any provider's HTTP API works.
+
+`@orvel/openai` is the v0.1 provider adapter. It uses a server-supplied key and
+implements `ModelProvider`; no provider package is imported by the runtime.
 
 ## Focused packages
 
 - `@orvel/memory` defines how memories are stored and recalled.
 - `@orvel/knowledge` defines how relevant source material is retrieved.
 - `@orvel/skills` defines executable actions and their context.
-- `@orvel/training` defines teaching examples and feedback records.
-- `@orvel/evals` defines cases, evaluators, and normalized results.
+- `@orvel/training` defines teaching examples, deterministic retrieval, and
+  inspectable teaching-context construction.
+- `@orvel/evals` defines cases, normalized results, and the v0.1 contains-text
+  evaluator.
+- `@orvel/local` implements the repository contracts as atomic JSON-file
+  persistence for local development.
 
-These packages currently expose contracts, not pretend storage engines or
-provider integrations. Implementations can live in separate packages once their
-requirements are understood.
+`@orvel/sdk` composes repositories, retrieval, and the runtime into a reusable
+developer-facing client. Studio consumes that client from server components and
+server actions; it does not contain core agent behavior.
 
 ## Versioning and deployment
 
