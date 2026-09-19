@@ -8,9 +8,10 @@ together prompts and tools and more like teaching something how to think and
 work.
 
 > [!IMPORTANT]
-> Orvel is at the foundation stage. The repository currently establishes core
-> contracts, workspace tooling, and an early Studio shell. It is not yet a
-> production-ready agent platform, and its APIs will change.
+> Orvel v0.1 implements a local-first teaching loop: create an agent, chat,
+> save a correction, retrieve relevant corrections for later questions, and run
+> a simple deterministic eval. It is not model fine-tuning or a production-ready
+> agent platform, and its APIs will change.
 
 ## Philosophy
 
@@ -49,6 +50,23 @@ orvel/
 
 Package boundaries are described in [docs/architecture.md](docs/architecture.md).
 
+## v0.1: contextual teaching
+
+v0.1 proves the idea of teaching an agent without changing model weights:
+
+1. Create an agent with provider-neutral model configuration and instructions.
+2. Chat with it and save a correction for an assistant response.
+3. Orvel persists the structured teaching locally.
+4. A later related question uses deterministic token-overlap retrieval.
+5. Matching teachings are formatted as explicit creator-supplied context and
+   passed to the configured provider.
+
+Studio supports Agents, Chat, Teachings, and Evals. The included OpenAI adapter
+uses the Responses API on the server; no API key is sent to the browser.
+
+See [docs/v0.1-teaching.md](docs/v0.1-teaching.md) for the exact behavior and
+limitations.
+
 ## Development
 
 ### Requirements
@@ -61,10 +79,15 @@ Package boundaries are described in [docs/architecture.md](docs/architecture.md)
 ```bash
 corepack enable
 pnpm install
+cp .env.example apps/studio/.env.local
+# Add OPENAI_API_KEY to .env.local
 pnpm dev
 ```
 
 `pnpm dev` starts Orvel Studio at <http://localhost:3000>.
+
+Without `OPENAI_API_KEY`, Studio remains usable for creating agents and viewing
+data, and clearly explains why sending messages is unavailable.
 
 ### Checks
 

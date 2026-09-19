@@ -196,6 +196,15 @@ importers:
 
   apps/studio:
     dependencies:
+      '@orvel/local':
+        specifier: workspace:*
+        version: link:../../packages/local
+      '@orvel/openai':
+        specifier: workspace:*
+        version: link:../../packages/openai
+      '@orvel/sdk':
+        specifier: workspace:*
+        version: link:../../sdk
       next:
         specifier: 16.3.5
         version: 16.3.5(@babel/core@7.29.7(supports-color@7.2.0))(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -213,17 +222,48 @@ importers:
         specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
 
+  examples/support-bot:
+    dependencies:
+      '@orvel/local':
+        specifier: workspace:*
+        version: link:../../packages/local
+      '@orvel/sdk':
+        specifier: workspace:*
+        version: link:../../sdk
+
   packages/evals: {}
 
   packages/knowledge: {}
 
+  packages/local:
+    dependencies:
+      '@orvel/evals':
+        specifier: workspace:*
+        version: link:../evals
+      '@orvel/runtime':
+        specifier: workspace:*
+        version: link:../runtime
+      '@orvel/training':
+        specifier: workspace:*
+        version: link:../training
+
   packages/memory: {}
+
+  packages/openai:
+    dependencies:
+      '@orvel/runtime':
+        specifier: workspace:*
+        version: link:../runtime
 
   packages/runtime: {}
 
   packages/skills: {}
 
-  packages/training: {}
+  packages/training:
+    dependencies:
+      '@orvel/runtime':
+        specifier: workspace:*
+        version: link:../runtime
 
   sdk:
     dependencies:

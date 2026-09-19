@@ -8,6 +8,8 @@ const agent = {
   name: 'Guide',
   instructions: 'Answer clearly.',
   brain: { provider: 'example', model: 'example-model' },
+  createdAt: new Date('2026-01-01T00:00:00.000Z'),
+  updatedAt: new Date('2026-01-01T00:00:00.000Z'),
 }
 
 test('delegates a run through the configured provider', async () => {
@@ -24,15 +26,22 @@ test('delegates a run through the configured provider', async () => {
     ],
   })
 
-  const response = await runtime.run(agent, {
+  const result = await runtime.run(agent, {
     messages: [{ role: 'user', content: 'Hello?' }],
+    context: [{ id: 'teaching-1', label: 'Teaching', content: 'Be accurate.' }],
   })
 
-  assert.equal(response.content, 'Hello.')
+  assert.equal(result.response.content, 'Hello.')
+  assert.deepEqual(result.context, [
+    { id: 'teaching-1', label: 'Teaching', content: 'Be accurate.' },
+  ])
   assert.deepEqual(receivedRequest, {
     model: 'example-model',
+    instructions: 'Answer clearly.',
+    context: [{ id: 'teaching-1', label: 'Teaching', content: 'Be accurate.' }],
     messages: [
       { role: 'system', content: 'Answer clearly.' },
+      { role: 'system', content: '[Teaching]\nBe accurate.' },
       { role: 'user', content: 'Hello?' },
     ],
   })
