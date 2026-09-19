@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@orvel/local": "workspace:*",
+    "@orvel/ollama": "workspace:*",
     "@orvel/openai": "workspace:*",
     "@orvel/sdk": "workspace:*",
     "next": "16.3.5",

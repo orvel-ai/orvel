@@ -9,7 +9,11 @@ import {
   sendMessageAction,
   startConversationAction,
 } from '../../actions'
-import { isProviderConfigured, orvel } from '../../lib/orvel'
+import {
+  getOllamaAvailability,
+  isProviderConfigured,
+  orvel,
+} from '../../lib/orvel'
 
 type PageProps = {
   params: Promise<{ agentId: string }>
@@ -40,12 +44,17 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
     parameters.tab === 'teachings' || parameters.tab === 'evals'
       ? parameters.tab
       : 'chat'
-  const [conversations, teachings, evals, evalRuns] = await Promise.all([
-    orvel.listConversations(agentId),
-    orvel.listTeachings(agentId),
-    orvel.listEvals(agentId),
-    orvel.listEvalRuns(agentId),
-  ])
+  const [conversations, teachings, evals, evalRuns, ollama] = await Promise.all(
+    [
+      orvel.listConversations(agentId),
+      orvel.listTeachings(agentId),
+      orvel.listEvals(agentId),
+      orvel.listEvalRuns(agentId),
+      agent.brain.provider === 'ollama'
+        ? getOllamaAvailability()
+        : Promise.resolve(undefined),
+    ],
+  )
   const conversation =
     conversations.find((item) => item.id === parameters.conversation) ??
     conversations[0]
@@ -135,11 +144,19 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
           </aside>
 
           <div className="chat-panel">
-            {!isProviderConfigured ? (
+            {!isProviderConfigured(agent.brain.provider) ? (
               <p className="setup-message">
                 OpenAI is not configured. Add <code>OPENAI_API_KEY</code> to{' '}
                 <code>.env.local</code> and restart Studio before sending a
                 message.
+              </p>
+            ) : null}
+            {agent.brain.provider === 'ollama' &&
+            ollama &&
+            !ollama.available ? (
+              <p className="setup-message">
+                Ollama is unavailable. Install and start Ollama, then pull{' '}
+                <code>{agent.brain.model}</code>. {ollama.error}
               </p>
             ) : null}
             {!conversation ? (
@@ -242,7 +259,10 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
                     rows={3}
                     placeholder="Ask a question…"
                   />
-                  <button type="submit" disabled={!isProviderConfigured}>
+                  <button
+                    type="submit"
+                    disabled={!isProviderConfigured(agent.brain.provider)}
+                  >
                     Send
                   </button>
                 </form>
@@ -340,7 +360,10 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
                   <form action={runEvalAction}>
                     <input type="hidden" name="agentId" value={agentId} />
                     <input type="hidden" name="evalId" value={evalCase.id} />
-                    <button type="submit" disabled={!isProviderConfigured}>
+                    <button
+                      type="submit"
+                      disabled={!isProviderConfigured(agent.brain.provider)}
+                    >
                       Run eval
                     </button>
                   </form>

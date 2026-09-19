@@ -1,14 +1,15 @@
 import Link from 'next/link'
 
-import { createAgentAction } from './actions'
-import { orvel } from './lib/orvel'
+import { AgentForm } from './agent-form'
+import { getOllamaAvailability, orvel } from './lib/orvel'
 
 type PageProps = { searchParams: Promise<{ error?: string }> }
 
 export default async function Home({ searchParams }: PageProps) {
-  const [agents, parameters] = await Promise.all([
+  const [agents, parameters, ollama] = await Promise.all([
     orvel.listAgents(),
     searchParams,
+    getOllamaAvailability(),
   ])
 
   return (
@@ -61,45 +62,10 @@ export default async function Home({ searchParams }: PageProps) {
           )}
         </div>
 
-        <form action={createAgentAction} className="panel form-stack">
-          <div>
-            <p className="eyebrow">New agent</p>
-            <h2>Create an agent</h2>
-          </div>
-          <label>
-            Name
-            <input name="name" placeholder="SupportBot" required />
-          </label>
-          <label>
-            Description <span>optional</span>
-            <input
-              name="description"
-              placeholder="Handles customer-support questions"
-            />
-          </label>
-          <label>
-            Instructions
-            <textarea
-              name="instructions"
-              placeholder="You are a customer support agent. Be clear and accurate."
-              required
-              rows={5}
-            />
-          </label>
-          <div className="form-row">
-            <label>
-              Provider
-              <select name="provider" defaultValue="openai">
-                <option value="openai">OpenAI</option>
-              </select>
-            </label>
-            <label>
-              Model
-              <input name="model" defaultValue="gpt-4.1-mini" required />
-            </label>
-          </div>
-          <button type="submit">Create agent</button>
-        </form>
+        <AgentForm
+          ollamaModels={ollama.available ? ollama.models : []}
+          {...(!ollama.available ? { ollamaError: ollama.error } : {})}
+        />
       </section>
     </main>
   )

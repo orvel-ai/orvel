@@ -61,8 +61,9 @@ v0.1 proves the idea of teaching an agent without changing model weights:
 5. Matching teachings are formatted as explicit creator-supplied context and
    passed to the configured provider.
 
-Studio supports Agents, Chat, Teachings, and Evals. The included OpenAI adapter
-uses the Responses API on the server; no API key is sent to the browser.
+Studio supports Agents, Chat, Teachings, and Evals. Use hosted models through
+OpenAI or run a local model through Ollama. Provider calls remain server-side;
+no API key is sent to the browser.
 
 See [docs/v0.1-teaching.md](docs/v0.1-teaching.md) for the exact behavior and
 limitations.
@@ -80,14 +81,34 @@ limitations.
 corepack enable
 pnpm install
 cp .env.example apps/studio/.env.local
-# Add OPENAI_API_KEY to .env.local
 pnpm dev
 ```
 
 `pnpm dev` starts Orvel Studio at <http://localhost:3000>.
 
-Without `OPENAI_API_KEY`, Studio remains usable for creating agents and viewing
-data, and clearly explains why sending messages is unavailable.
+### Run locally with Ollama (no paid API key)
+
+Install and start [Ollama](https://ollama.com/), then pull any compatible local
+model. For a lightweight development option, `llama3.2:3b` is one possible
+choice; model names stay configurable in Orvel.
+
+```bash
+ollama pull llama3.2:3b
+pnpm dev
+```
+
+In Studio, select **Ollama (Local)**, enter or choose the pulled model, and
+create an agent. Ollama defaults to `http://localhost:11434`; set
+`OLLAMA_BASE_URL` in `apps/studio/.env.local` only when it runs elsewhere.
+
+OpenAI remains optional and requires `OPENAI_API_KEY` only for OpenAI-backed
+agents. Without either an OpenAI key or a running Ollama server, Studio still
+lets you create and view agents but explains why a selected provider cannot run.
+
+Ollama runs the underlying language model locally. Orvel provides the agent
+runtime, teaching, memory/knowledge architecture, evaluation, and surrounding
+agent behavior. v0.1 teachings are retrieved contextual corrections; they do
+not modify a local model's weights.
 
 ### Checks
 
