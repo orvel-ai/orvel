@@ -162,3 +162,50 @@ test('agent validation and deterministic eval behavior are exposed through the S
   const { run } = await client.runEval(evalCase.id)
   assert.equal(run.result.passed, true)
 })
+
+test('Ollama-backed agents receive only relevant teaching context', async () => {
+  const requests = []
+  const runtime = createRuntime({
+    providers: [
+      {
+        id: 'ollama',
+        async generate(request) {
+          requests.push(request)
+          return { content: 'Local response.' }
+        },
+      },
+    ],
+  })
+  let nextId = 0
+  const client = createOrvelClient({
+    store: createStore(),
+    runtime,
+    createId: () => `ollama-${++nextId}`,
+  })
+  const agent = await client.createAgent({
+    name: 'Local SupportBot',
+    instructions: 'Help customers.',
+    model: { provider: 'ollama', model: 'llama3.2:3b' },
+  })
+  await client.saveTeaching({
+    agentId: agent.id,
+    userInput: 'How long do refunds take?',
+    originalResponse: 'I do not know.',
+    correctedResponse: 'Refunds normally take 5–7 business days.',
+  })
+
+  const refundConversation = await client.createConversation(agent.id)
+  await client.sendMessage({
+    conversationId: refundConversation.id,
+    content: 'When should I expect my refund?',
+  })
+  const skyConversation = await client.createConversation(agent.id)
+  await client.sendMessage({
+    conversationId: skyConversation.id,
+    content: 'What color is the sky?',
+  })
+
+  assert.equal(requests[0].context.length, 1)
+  assert.match(requests[0].context[0].content, /Refunds normally take/)
+  assert.deepEqual(requests[1].context, [])
+})

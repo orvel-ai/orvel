@@ -325,6 +325,13 @@ button:disabled {
   color: #f4d0c0;
 }
 
+.provider-note {
+  margin: -5px 0 0;
+  color: #aab2c0;
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+
 .notice-success {
   border-color: #7ef9bb;
   background: #10241c;
