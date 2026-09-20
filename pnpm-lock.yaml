@@ -266,6 +266,9 @@ importers:
       '@orvel/runtime':
         specifier: workspace:*
         version: link:../runtime
+      '@orvel/training':
+        specifier: workspace:*
+        version: link:../training
 
   packages/openai:
     dependencies:

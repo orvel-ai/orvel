@@ -57,7 +57,8 @@ v0.1 proves the idea of teaching an agent without changing model weights:
 1. Create an agent with provider-neutral model configuration and instructions.
 2. Chat with it and save a correction for an assistant response.
 3. Orvel persists the structured teaching locally.
-4. A later related question uses deterministic token-overlap retrieval.
+4. A later related question uses lexical retrieval, or optional local hybrid
+   lexical-plus-semantic retrieval.
 5. Matching teachings are formatted as explicit creator-supplied context and
    passed to the configured provider.
 
@@ -67,6 +68,9 @@ server-side; no API key is sent to the browser.
 
 See [docs/v0.1-teaching.md](docs/v0.1-teaching.md) for the exact behavior and
 limitations.
+
+For optional private semantic retrieval via a locally running Ollama embedding
+model, see [docs/semantic-teaching-retrieval.md](docs/semantic-teaching-retrieval.md).
 
 ## Development
 

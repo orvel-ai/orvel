@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { createOrvelClient, createRuntime } from '../dist/index.js'
+import {
+  createHybridTeachingRetriever,
+  createOrvelClient,
+  createRuntime,
+} from '../dist/index.js'
 
 function createStore() {
   const agents = []
@@ -255,4 +259,76 @@ test('Groq-backed agents receive only relevant teaching context', async () => {
   assert.equal(requests[0].context.length, 1)
   assert.match(requests[0].context[0].content, /Refunds normally take/)
   assert.deepEqual(requests[1].context, [])
+})
+
+test('semantic retrieval reaches a delivery teaching in a fresh conversation only', async () => {
+  const requests = []
+  const runtime = createRuntime({
+    providers: [
+      {
+        id: 'mock',
+        async generate(request) {
+          requests.push(request)
+          return { content: 'Mock response.' }
+        },
+      },
+    ],
+  })
+  const store = createStore()
+  const embeddingProvider = {
+    id: 'test-semantic-v1',
+    async embed(text) {
+      return /delivery|order|package|eta|parcel|arrive/i.test(text)
+        ? [1, 0]
+        : [0, 1]
+    },
+    async embedMany(texts) {
+      return Promise.all(texts.map((text) => this.embed(text)))
+    },
+  }
+  let nextId = 0
+  const client = createOrvelClient({
+    store,
+    runtime,
+    teachingRetriever: createHybridTeachingRetriever({
+      repository: store,
+      embeddingProvider,
+    }),
+    createId: () => `semantic-${++nextId}`,
+  })
+  const agent = await client.createAgent({
+    name: 'SupportBot',
+    instructions: 'Help customers.',
+    model: { provider: 'mock', model: 'mock-1' },
+  })
+  const firstConversation = await client.createConversation(agent.id)
+  const first = await client.sendMessage({
+    conversationId: firstConversation.id,
+    content: 'How long does delivery take?',
+  })
+  await client.saveTeaching({
+    agentId: agent.id,
+    conversationId: firstConversation.id,
+    userInput: 'How long does delivery take?',
+    originalResponse: first.message.content,
+    correctedResponse: 'Delivery typically takes 5 to 7 days maximum.',
+  })
+
+  const semanticConversation = await client.createConversation(agent.id)
+  await client.sendMessage({
+    conversationId: semanticConversation.id,
+    content: 'When will I get my order?',
+  })
+  assert.equal(requests[1].context.length, 1)
+  assert.match(
+    requests[1].context[0].content,
+    /Delivery typically takes 5 to 7 days maximum/,
+  )
+
+  const unrelatedConversation = await client.createConversation(agent.id)
+  await client.sendMessage({
+    conversationId: unrelatedConversation.id,
+    content: 'What color is the sky?',
+  })
+  assert.deepEqual(requests[2].context, [])
 })
