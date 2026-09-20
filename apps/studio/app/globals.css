@@ -1,4 +1,9 @@
 :root {
+  --orvel-blue: #2e8cff;
+  --orvel-green: #24c86b;
+  --orvel-orange: #ff8a1f;
+  --orvel-red: #ef3f57;
+  --orvel-ink: #1e1f22;
   font-family:
     Inter,
     ui-sans-serif,
@@ -8,7 +13,7 @@
     'Segoe UI',
     sans-serif;
   color: #191918;
-  background: #f7f7f5;
+  background: #fafbf9;
   font-synthesis: none;
 }
 * {
@@ -16,18 +21,28 @@
 }
 html {
   min-width: 320px;
-  background: #f7f7f5;
+  background: #fafbf9;
 }
 body {
   margin: 0;
   min-width: 320px;
   background:
     radial-gradient(
-      circle at 80% -10%,
-      rgba(216, 231, 255, 0.55),
-      transparent 28rem
+      circle at 87% -12%,
+      rgba(46, 140, 255, 0.15),
+      transparent 31rem
     ),
-    #f7f7f5;
+    radial-gradient(
+      circle at 57% 110%,
+      rgba(255, 138, 31, 0.11),
+      transparent 32rem
+    ),
+    radial-gradient(
+      circle at 5% 76%,
+      rgba(36, 200, 107, 0.07),
+      transparent 27rem
+    ),
+    #fafbf9;
 }
 button,
 input,
@@ -51,7 +66,7 @@ input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
 summary:focus-visible {
-  outline: 3px solid rgba(66, 112, 190, 0.35);
+  outline: 3px solid rgba(46, 140, 255, 0.4);
   outline-offset: 2px;
 }
 
@@ -70,11 +85,11 @@ summary:focus-visible {
   flex-direction: column;
   gap: 18px;
   overflow: hidden;
-  border: 1px solid rgba(24, 24, 22, 0.09);
+  border: 1px solid rgba(46, 140, 255, 0.14);
   border-radius: 22px;
   padding: 20px 14px 14px;
   background: rgba(255, 255, 253, 0.82);
-  box-shadow: 0 14px 40px rgba(28, 28, 22, 0.06);
+  box-shadow: 0 14px 40px rgba(46, 140, 255, 0.08);
   backdrop-filter: blur(24px);
 }
 .brand {
@@ -91,6 +106,7 @@ summary:focus-visible {
   width: 28px;
   height: 28px;
   object-fit: contain;
+  filter: drop-shadow(0 3px 5px rgba(46, 140, 255, 0.22));
 }
 .command-field,
 .topbar-search {
@@ -140,8 +156,13 @@ summary:focus-visible {
   text-decoration: none;
 }
 .sidebar-item.active {
-  background: rgba(29, 29, 27, 0.07);
-  color: #1d1d1b;
+  background: linear-gradient(
+    100deg,
+    rgba(46, 140, 255, 0.12),
+    rgba(36, 200, 107, 0.09),
+    rgba(255, 138, 31, 0.09)
+  );
+  color: var(--orvel-ink);
 }
 .sidebar-item.muted {
   cursor: default;
@@ -181,7 +202,7 @@ summary:focus-visible {
 }
 .agent-row:hover,
 .agent-row.selected {
-  background: rgba(24, 24, 22, 0.065);
+  background: rgba(46, 140, 255, 0.08);
 }
 .agent-row strong,
 .agent-row small {
@@ -243,10 +264,15 @@ summary:focus-visible {
   height: 40px;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid rgba(27, 27, 25, 0.08);
+  border: 1px solid rgba(46, 140, 255, 0.2);
   border-radius: 13px;
-  background: linear-gradient(145deg, #e9e7e0, #dce8ef);
-  color: #3e5261;
+  background: linear-gradient(
+    145deg,
+    rgba(46, 140, 255, 0.16),
+    rgba(36, 200, 107, 0.13),
+    rgba(255, 138, 31, 0.15)
+  );
+  color: #22699d;
   font-size: 0.74rem;
   font-weight: 760;
   letter-spacing: -0.02em;
@@ -906,7 +932,13 @@ summary:focus-visible {
   border: 0;
   border-radius: 9px;
   padding: 9px 12px;
-  background: #1e1e1c;
+  background: linear-gradient(
+    105deg,
+    var(--orvel-blue),
+    var(--orvel-green) 45%,
+    var(--orvel-orange)
+  );
+  box-shadow: 0 7px 18px rgba(46, 140, 255, 0.2);
   color: #fff;
   font-size: 0.76rem;
   font-weight: 680;
@@ -914,7 +946,7 @@ summary:focus-visible {
 }
 .primary-button:hover,
 .send-button:hover:not(:disabled) {
-  background: #000;
+  background: linear-gradient(105deg, #1679e7, #14aa55 45%, #f06f11);
 }
 .evaluation-grid {
   display: grid;
@@ -1024,6 +1056,9 @@ summary:focus-visible {
   letter-spacing: -0.065em;
   line-height: 1;
 }
+.home-hero h1::selection {
+  background: rgba(46, 140, 255, 0.2);
+}
 .home-hero p:last-child {
   max-width: 550px;
   margin: 0;
@@ -1039,8 +1074,14 @@ summary:focus-visible {
 .overview-stat-card,
 .overview-panel,
 .create-agent-section {
-  border: 1px solid rgba(24, 24, 22, 0.09);
-  background: rgba(255, 255, 253, 0.76);
+  border: 1px solid rgba(46, 140, 255, 0.12);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.91),
+      rgba(248, 252, 255, 0.74)
+    ),
+    rgba(255, 255, 253, 0.76);
   box-shadow:
     0 1px 1px rgba(21, 21, 19, 0.02),
     0 12px 35px rgba(28, 28, 22, 0.035);
@@ -1063,20 +1104,20 @@ summary:focus-visible {
   border-radius: 12px;
 }
 .overview-stat-icon.blue {
-  background: #e6f0f4;
-  color: #486876;
+  background: rgba(46, 140, 255, 0.13);
+  color: #2075c8;
 }
 .overview-stat-icon.violet {
-  background: #eee9f6;
-  color: #74628d;
+  background: rgba(239, 63, 87, 0.12);
+  color: #c7334d;
 }
 .overview-stat-icon.gold {
-  background: #f7f0df;
-  color: #96733f;
+  background: rgba(255, 138, 31, 0.14);
+  color: #cd6513;
 }
 .overview-stat-icon.green {
-  background: #e9f3e9;
-  color: #4f8660;
+  background: rgba(36, 200, 107, 0.14);
+  color: #148d49;
 }
 .overview-stat-card div {
   display: grid;
