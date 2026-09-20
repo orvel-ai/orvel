@@ -18,6 +18,10 @@ function createStore() {
     async createAgent(agent) {
       agents.push(agent)
     },
+    async updateAgent(agent) {
+      const index = agents.findIndex((candidate) => candidate.id === agent.id)
+      if (index >= 0) agents[index] = agent
+    },
     async getAgent(id) {
       return agents.find((agent) => agent.id === id)
     },
@@ -384,4 +388,80 @@ test('a failed LLM relevance judge falls back without breaking chat', async () =
   })
   assert.equal(result.message.content, 'Refund teaching used.')
   assert.equal(result.teachingIds.length, 1)
+})
+
+test('Groq agents receive general knowledge before distinct relevant teachings', async () => {
+  const requests = []
+  const runtime = createRuntime({
+    providers: [
+      {
+        id: 'groq',
+        async generate(request) {
+          requests.push(request)
+          return {
+            content: request.context.some(
+              (item) => item.label === 'Creator-provided general knowledge',
+            )
+              ? 'We deliver throughout Nigeria.'
+              : 'No business facts available.',
+          }
+        },
+      },
+    ],
+  })
+  let nextId = 0
+  const client = createOrvelClient({
+    store: createStore(),
+    runtime,
+    createId: () => `knowledge-${++nextId}`,
+  })
+  const withoutKnowledge = await client.createAgent({
+    name: 'Plain agent',
+    instructions: 'Help customers.',
+    model: { provider: 'groq', model: 'openai/gpt-oss-20b' },
+  })
+  assert.equal(withoutKnowledge.generalKnowledge, undefined)
+
+  const agent = await client.createAgent({
+    name: 'Groq SupportBot',
+    instructions: 'Help customers.',
+    generalKnowledge: 'We deliver throughout Nigeria.',
+    model: { provider: 'groq', model: 'openai/gpt-oss-20b' },
+  })
+  const updated = await client.updateAgent(agent.id, {
+    generalKnowledge: 'We deliver throughout Nigeria. Delivery takes 5–7 days.',
+  })
+  assert.match(updated.generalKnowledge, /5–7 days/)
+
+  await client.saveTeaching({
+    agentId: agent.id,
+    userInput: 'How long does delivery take?',
+    originalResponse: 'I do not know.',
+    correctedResponse: 'Delivery takes 5–7 business days.',
+  })
+  const conversation = await client.createConversation(agent.id)
+  const result = await client.sendMessage({
+    conversationId: conversation.id,
+    content: 'How long does delivery take in Nigeria?',
+  })
+
+  assert.equal(result.message.content, 'We deliver throughout Nigeria.')
+  assert.deepEqual(
+    requests[0].context.map((item) => item.label),
+    [
+      'Creator-provided general knowledge',
+      'Creator-supplied teaching examples',
+    ],
+  )
+  assert.match(requests[0].context[0].content, /factual reference material/)
+  assert.match(requests[0].context[1].content, /Creator-corrected response/)
+
+  const isolatedConversation = await client.createConversation(
+    withoutKnowledge.id,
+  )
+  await client.sendMessage({
+    conversationId: isolatedConversation.id,
+    content: 'When will my package arrive in Nigeria?',
+  })
+  assert.deepEqual(requests[1].context, [])
 })

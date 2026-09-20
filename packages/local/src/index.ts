@@ -149,6 +149,15 @@ export class FileStore
     }))
   }
 
+  async updateAgent(agent: AgentDefinition): Promise<void> {
+    await this.mutate((data) => ({
+      ...data,
+      agents: data.agents.map((candidate) =>
+        candidate.id === agent.id ? asAgent(agent) : candidate,
+      ),
+    }))
+  }
+
   async getAgent(id: string): Promise<AgentDefinition | undefined> {
     const data = await this.read()
     const agent = data.agents.find((candidate) => candidate.id === id)

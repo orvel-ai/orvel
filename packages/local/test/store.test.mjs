@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
-import { createFileStore } from '../dist/index.js'
+import { FileStore, createFileStore } from '../dist/index.js'
 
 test('persists agents, conversations, messages, and teachings across store instances', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'orvel-local-'))
@@ -17,6 +17,7 @@ test('persists agents, conversations, messages, and teachings across store insta
       id: 'agent-1',
       name: 'SupportBot',
       instructions: 'Help customers.',
+      generalKnowledge: 'Delivery takes 5–7 business days.',
       brain: { provider: 'mock', model: 'mock-1' },
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -51,6 +52,19 @@ test('persists agents, conversations, messages, and teachings across store insta
     const reopenedStore = createFileStore(dataPath)
     assert.equal((await reopenedStore.listAgents())[0].name, 'SupportBot')
     assert.equal(
+      (await reopenedStore.listAgents())[0].generalKnowledge,
+      'Delivery takes 5–7 business days.',
+    )
+    await reopenedStore.updateAgent({
+      ...(await reopenedStore.getAgent('agent-1')),
+      generalKnowledge: 'Returns are accepted within 14 days.',
+      updatedAt: new Date('2026-01-02T00:00:00.000Z'),
+    })
+    assert.equal(
+      (await new FileStore(dataPath).getAgent('agent-1')).generalKnowledge,
+      'Returns are accepted within 14 days.',
+    )
+    assert.equal(
       (await reopenedStore.listMessages('conversation-1'))[0].content,
       'Refund?',
     )
@@ -61,6 +75,41 @@ test('persists agents, conversations, messages, and teachings across store insta
     assert.deepEqual(
       (await reopenedStore.listTeachings('agent-1'))[0].semanticEmbedding,
       { provider: 'test-embedding-v1', values: [0.25, 0.75] },
+    )
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
+test('reads existing agent records without general knowledge', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'orvel-local-'))
+  const dataPath = join(directory, 'data.json')
+  try {
+    await writeFile(
+      dataPath,
+      JSON.stringify({
+        version: 1,
+        agents: [
+          {
+            id: 'legacy-agent',
+            name: 'Legacy',
+            instructions: 'Help.',
+            brain: { provider: 'mock', model: 'mock-1' },
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+        conversations: [],
+        messages: [],
+        teachings: [],
+        evals: [],
+        evalRuns: [],
+      }),
+    )
+    assert.equal(
+      (await createFileStore(dataPath).getAgent('legacy-agent'))
+        .generalKnowledge,
+      undefined,
     )
   } finally {
     await rm(directory, { recursive: true, force: true })

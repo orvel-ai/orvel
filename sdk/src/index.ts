@@ -14,6 +14,8 @@ import {
   type ConversationMessage,
   type ConversationRepository,
   type CreateAgentInput,
+  type UpdateAgentInput,
+  updateAgent as updateAgentDefinition,
 } from '@orvel/runtime'
 import {
   createKeywordTeachingRetriever,
@@ -67,6 +69,7 @@ export interface RunEvalResult {
 
 export interface OrvelClient {
   createAgent(input: CreateAgentInput): Promise<AgentDefinition>
+  updateAgent(id: string, input: UpdateAgentInput): Promise<AgentDefinition>
   getAgent(id: string): Promise<AgentDefinition | undefined>
   listAgents(): Promise<readonly AgentDefinition[]>
   createConversation(agentId: string): Promise<Conversation>
@@ -121,6 +124,15 @@ export function createOrvelClient({
     async createAgent(input) {
       const agent = createAgentDefinition(input, { id: createId(), now: now() })
       await store.createAgent(agent)
+      return agent
+    },
+    async updateAgent(id, input) {
+      const existing = await requireAgent(id)
+      const agent = updateAgentDefinition(existing, input, { now: now() })
+      if (!store.updateAgent) {
+        throw new Error('This store does not support updating agents.')
+      }
+      await store.updateAgent(agent)
       return agent
     },
     getAgent: (id) => store.getAgent(id),
