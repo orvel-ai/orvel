@@ -1331,6 +1331,43 @@ summary:focus-visible {
   font-weight: 670;
   white-space: nowrap;
 }
+.new-agent-page {
+  max-width: 900px;
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #68726d;
+  font-size: 0.78rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+.back-link:hover {
+  color: var(--orvel-blue);
+}
+.new-agent-intro {
+  max-width: 630px;
+  padding: 32px 0 24px;
+}
+.new-agent-intro h1 {
+  margin: 8px 0;
+  color: #20221f;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 740;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+.new-agent-intro p:last-child {
+  margin: 0;
+  color: #737b76;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.new-agent-page .agent-form {
+  position: static;
+  margin-top: 8px;
+}
 .public-home {
   overflow: hidden;
   background:

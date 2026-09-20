@@ -76,7 +76,7 @@ export default function Home() {
             every conversation better.
           </p>
           <div className="public-hero-actions">
-            <Link className="public-primary-button" href="/agents#new-agent">
+            <Link className="public-primary-button" href="/agents/new">
               Create an agent <Icon icon={ArrowRight01Icon} size={17} />
             </Link>
             <a className="public-text-button" href="#featured-agents">
@@ -186,7 +186,7 @@ export default function Home() {
               </div>
               <h3>{agent.name}</h3>
               <p>{agent.description}</p>
-              <Link href="/agents#new-agent">
+              <Link href="/agents/new">
                 Use this as inspiration{' '}
                 <Icon icon={ArrowRight01Icon} size={15} />
               </Link>
@@ -199,7 +199,7 @@ export default function Home() {
         <Image alt="" height={76} src="/orvel-mark.png" width={76} />
         <p className="public-eyebrow">Make your expertise useful</p>
         <h2>Start building with Orvel.</h2>
-        <Link className="public-primary-button" href="/agents#new-agent">
+        <Link className="public-primary-button" href="/agents/new">
           Create your first agent <Icon icon={ArrowRight01Icon} size={17} />
         </Link>
       </section>

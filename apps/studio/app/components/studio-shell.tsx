@@ -86,7 +86,7 @@ export function StudioShell({
         </nav>
         <div className="sidebar-section-heading">
           <span>Your agents</span>
-          <Link aria-label="Create agent" href="/agents#new-agent">
+          <Link aria-label="Create agent" href="/agents/new">
             <Icon icon={PlusSignIcon} size={16} />
           </Link>
         </div>
