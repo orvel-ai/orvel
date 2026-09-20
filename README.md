@@ -69,8 +69,10 @@ server-side; no API key is sent to the browser.
 See [docs/v0.1-teaching.md](docs/v0.1-teaching.md) for the exact behavior and
 limitations.
 
-For optional private semantic retrieval via a locally running Ollama embedding
-model, see [docs/semantic-teaching-retrieval.md](docs/semantic-teaching-retrieval.md).
+Semantic retrieval can use a locally running Ollama embedding model or, for a
+Groq-backed Studio setup without embeddings, a Groq relevance judge. Both keep
+teaching contextual rather than fine-tuning. See
+[docs/semantic-teaching-retrieval.md](docs/semantic-teaching-retrieval.md).
 
 ## Development
 

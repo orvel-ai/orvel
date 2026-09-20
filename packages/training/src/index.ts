@@ -45,12 +45,27 @@ export interface EmbeddingProvider {
   embedMany?(texts: readonly string[]): Promise<readonly (readonly number[])[]>
 }
 
+export interface SemanticRelevanceInput {
+  readonly query: string
+  readonly teaching: TeachingExample
+}
+
+export interface SemanticRelevanceResult {
+  readonly relevant: boolean
+  readonly confidence: number
+}
+
+export interface SemanticRelevanceProvider {
+  readonly id: string
+  judge(input: SemanticRelevanceInput): Promise<SemanticRelevanceResult>
+}
+
 export interface TeachingMatch {
   readonly teaching: TeachingExample
   readonly score: number
   readonly lexicalScore?: number
   readonly semanticScore?: number
-  readonly strategy?: 'lexical' | 'semantic' | 'hybrid'
+  readonly strategy?: 'lexical' | 'semantic' | 'hybrid' | 'llm'
 }
 
 export interface TeachingRetriever {
@@ -71,6 +86,8 @@ export interface HybridTeachingRetrieverOptions {
   readonly semanticMinimumScore?: number
   readonly lexicalWeight?: number
   readonly semanticWeight?: number
+  readonly semanticRelevanceProvider?: SemanticRelevanceProvider
+  readonly relevanceMinimumConfidence?: number
 }
 
 const ignoredTokens = new Set([
@@ -255,6 +272,8 @@ export function createHybridTeachingRetriever({
   semanticMinimumScore = 0.72,
   lexicalWeight = 0.35,
   semanticWeight = 0.65,
+  semanticRelevanceProvider,
+  relevanceMinimumConfidence = 0.8,
 }: HybridTeachingRetrieverOptions): TeachingRetriever {
   const embeddingCache = new Map<string, readonly number[]>()
 
@@ -268,8 +287,8 @@ export function createHybridTeachingRetriever({
         lexicalScore: lexicalScore(queryTokens, teaching),
       }))
 
-      if (!embeddingProvider || !query.trim()) {
-        return lexicalMatches
+      const lexicalFallback = (): readonly TeachingMatch[] =>
+        lexicalMatches
           .filter((match) => match.lexicalScore >= lexicalMinimumScore)
           .sort(
             (left, right) =>
@@ -283,6 +302,49 @@ export function createHybridTeachingRetriever({
             lexicalScore: match.lexicalScore,
             strategy: 'lexical' as const,
           }))
+
+      if (!embeddingProvider || !query.trim()) {
+        if (!semanticRelevanceProvider || !query.trim())
+          return lexicalFallback()
+        try {
+          const judgements = await Promise.all(
+            teachings.map((teaching) =>
+              semanticRelevanceProvider.judge({ query, teaching }),
+            ),
+          )
+          const matches = lexicalMatches
+            .map((match, index) => ({ match, judgement: judgements[index]! }))
+            .filter(
+              ({ judgement }) =>
+                judgement.relevant &&
+                Number.isFinite(judgement.confidence) &&
+                judgement.confidence >= relevanceMinimumConfidence,
+            )
+            .map(({ match, judgement }) => ({
+              teaching: match.teaching,
+              score: judgement.confidence,
+              lexicalScore: match.lexicalScore,
+              semanticScore: judgement.confidence,
+              strategy: 'llm' as const,
+            }))
+            .sort(
+              (left, right) =>
+                right.score - left.score ||
+                right.lexicalScore - left.lexicalScore ||
+                left.teaching.id.localeCompare(right.teaching.id),
+            )
+          const seenCorrections = new Set<string>()
+          return matches
+            .filter((match) => {
+              const correction = normalizedCorrection(match.teaching)
+              if (seenCorrections.has(correction)) return false
+              seenCorrections.add(correction)
+              return true
+            })
+            .slice(0, limit)
+        } catch {
+          return lexicalFallback()
+        }
       }
 
       let queryEmbedding: readonly number[]
@@ -291,20 +353,7 @@ export function createHybridTeachingRetriever({
         if (!isUsableEmbedding(queryEmbedding))
           throw new Error('Invalid embedding')
       } catch {
-        return lexicalMatches
-          .filter((match) => match.lexicalScore >= lexicalMinimumScore)
-          .sort(
-            (left, right) =>
-              right.lexicalScore - left.lexicalScore ||
-              left.teaching.id.localeCompare(right.teaching.id),
-          )
-          .slice(0, limit)
-          .map((match) => ({
-            teaching: match.teaching,
-            score: match.lexicalScore,
-            lexicalScore: match.lexicalScore,
-            strategy: 'lexical' as const,
-          }))
+        return lexicalFallback()
       }
 
       const missing = teachings.filter(

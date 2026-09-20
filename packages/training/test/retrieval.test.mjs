@@ -148,6 +148,116 @@ test('semantic similarity rejects generic lexical overlap with different intent'
   assert.deepEqual(matches, [])
 })
 
+test('LLM relevance retrieval finds paraphrases, ranks relevant teachings, and deduplicates', async () => {
+  const duplicateDelivery = { ...deliveryTeaching, id: 'duplicate-delivery' }
+  const unrelated = { ...refundTeaching, id: 'unrelated-refund' }
+  const retriever = createHybridTeachingRetriever({
+    repository: {
+      listTeachings: async (agentId) =>
+        agentId === 'support-bot'
+          ? [deliveryTeaching, duplicateDelivery, unrelated]
+          : [],
+    },
+    semanticRelevanceProvider: {
+      id: 'fake-judge',
+      async judge({ query, teaching }) {
+        return {
+          relevant:
+            /package arrive/i.test(query) &&
+            /delivery/i.test(teaching.userInput),
+          confidence: teaching.id === 'delivery-teaching' ? 0.95 : 0.91,
+        }
+      },
+    },
+  })
+  const matches = await retriever.retrieve(
+    'support-bot',
+    'When should my package arrive?',
+  )
+  assert.deepEqual(
+    matches.map((match) => match.teaching.id),
+    ['delivery-teaching'],
+  )
+  assert.equal(matches[0].strategy, 'llm')
+  assert.deepEqual(
+    await retriever.retrieve('other-agent', 'When should my package arrive?'),
+    [],
+  )
+})
+
+test('LLM relevance retrieval rejects misleading lexical overlap and falls back on failures', async () => {
+  const passwordTeaching = {
+    id: 'password-teaching',
+    agentId: 'support-bot',
+    userInput: 'How do I change my account password?',
+    originalResponse: 'I do not know.',
+    correctedResponse: 'Use account settings to change your password.',
+    createdAt: new Date('2026-01-04T00:00:00.000Z'),
+  }
+  const rejected = createHybridTeachingRetriever({
+    repository: { listTeachings: async () => [passwordTeaching] },
+    semanticRelevanceProvider: {
+      id: 'fake-judge',
+      async judge() {
+        return { relevant: false, confidence: 0.99 }
+      },
+    },
+  })
+  assert.deepEqual(
+    await rejected.retrieve(
+      'support-bot',
+      'How do I change my delivery address?',
+    ),
+    [],
+  )
+
+  const fallback = createHybridTeachingRetriever({
+    repository: { listTeachings: async () => [refundTeaching] },
+    semanticRelevanceProvider: {
+      id: 'broken-judge',
+      async judge() {
+        throw new Error('malformed response')
+      },
+    },
+  })
+  const matches = await fallback.retrieve(
+    'support-bot',
+    'When should I expect my refund?',
+  )
+  assert.equal(matches[0].strategy, 'lexical')
+})
+
+test('LLM relevance retrieval enforces top-K after ranking', async () => {
+  const secondDelivery = {
+    ...deliveryTeaching,
+    id: 'second-delivery',
+    correctedResponse: 'Orders arrive within one week.',
+  }
+  const retriever = createHybridTeachingRetriever({
+    repository: {
+      listTeachings: async () => [deliveryTeaching, secondDelivery],
+    },
+    limit: 1,
+    semanticRelevanceProvider: {
+      id: 'fake-judge',
+      async judge({ teaching }) {
+        return {
+          relevant: true,
+          confidence: teaching.id === 'delivery-teaching' ? 0.95 : 0.85,
+        }
+      },
+    },
+  })
+  const matches = await retriever.retrieve(
+    'support-bot',
+    'When should my package arrive?',
+  )
+  assert.deepEqual(
+    matches.map((match) => match.teaching.id),
+    ['delivery-teaching'],
+  )
+})
+
 test('hybrid retrieval caches embeddings and falls back to lexical results', async () => {
   let teaching = { ...deliveryTeaching }
   let embedManyCalls = 0

@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { createGroqProvider } from '../dist/index.js'
+import {
+  createGroqProvider,
+  createGroqSemanticRelevanceProvider,
+} from '../dist/index.js'
 
 const request = {
   model: 'openai/gpt-oss-20b',
@@ -84,5 +87,65 @@ test('Groq handles malformed, empty, and network responses', async () => {
       },
     }).generate(request),
     /Could not reach Groq/,
+  )
+})
+
+test('Groq semantic relevance provider requests and validates JSON only', async () => {
+  let received
+  const provider = createGroqSemanticRelevanceProvider({
+    apiKey: 'test-key',
+    model: 'judge-model',
+    baseUrl: 'https://example.test/openai/v1',
+    fetch: async (url, init) => {
+      received = { url, init }
+      return new Response(
+        JSON.stringify({
+          choices: [
+            { message: { content: '{"relevant":true,"confidence":0.94}' } },
+          ],
+        }),
+      )
+    },
+  })
+  const result = await provider.judge({
+    query: 'When should my package arrive?',
+    teaching: {
+      id: 'delivery',
+      agentId: 'support',
+      userInput: 'How long does delivery take?',
+      originalResponse: 'Unknown.',
+      correctedResponse: 'Delivery takes 5–7 days.',
+      createdAt: new Date(),
+    },
+  })
+  assert.deepEqual(result, { relevant: true, confidence: 0.94 })
+  assert.equal(received.url, 'https://example.test/openai/v1/chat/completions')
+  assert.equal(
+    JSON.parse(received.init.body).response_format.type,
+    'json_object',
+  )
+})
+
+test('Groq semantic relevance provider rejects malformed JSON', async () => {
+  const provider = createGroqSemanticRelevanceProvider({
+    apiKey: 'test-key',
+    fetch: async () =>
+      new Response(
+        JSON.stringify({ choices: [{ message: { content: 'nope' } }] }),
+      ),
+  })
+  await assert.rejects(
+    provider.judge({
+      query: 'Question',
+      teaching: {
+        id: 'teaching',
+        agentId: 'agent',
+        userInput: 'Question',
+        originalResponse: 'Old',
+        correctedResponse: 'New',
+        createdAt: new Date(),
+      },
+    }),
+    /malformed semantic relevance JSON/,
   )
 })

@@ -4,7 +4,20 @@ Orvel v0.1 teaching remains contextual: it retrieves creator-saved corrections
 and supplies only the selected examples to the model. It does not fine-tune or
 retrain any model.
 
-## Hybrid retrieval
+## Retrieval modes
+
+Orvel supports three provider-neutral modes, selected by configuration:
+
+- **Embedding semantic retrieval** uses an `EmbeddingProvider` and cosine
+  similarity. The included Ollama adapter is local and opt-in.
+- **LLM semantic relevance retrieval** uses a `SemanticRelevanceProvider` to
+  judge whether each stored teaching is useful for a new message. Studio uses
+  the Groq adapter when `GROQ_API_KEY` is present and no embedding model is
+  configured. It uses an additional Groq request and tokens per candidate.
+- **Lexical fallback** uses deterministic token overlap when neither semantic
+  mode is configured or a semantic provider fails.
+
+## Hybrid embedding retrieval
 
 `@orvel/training` keeps the deterministic lexical retriever and adds a
 provider-neutral `EmbeddingProvider` interface plus `createHybridTeachingRetriever`.
@@ -65,3 +78,22 @@ models being compared.
 This is an in-memory scan of local teaching vectors, appropriate for v0.1's
 small local datasets. It intentionally adds no vector database, remote storage,
 or automatic model download.
+
+## LLM relevance judging
+
+The LLM judge receives the new user message and one candidate teaching and
+returns only `{ relevant, confidence }`; it is explicitly instructed not to
+answer the user. For small v0.1 collections, all teachings for the current
+agent can be judged directly. Results must be relevant and meet the default
+confidence of `0.8`, are ranked by confidence, deduplicated by corrected
+response, and limited to three.
+
+In Studio, set `GROQ_API_KEY` and leave `OLLAMA_EMBEDDING_MODEL` unset to use
+the Groq judge automatically. `GROQ_RELEVANCE_MODEL` is optional and selects a
+different Groq model for judging without changing the agent's response model.
+
+If a judge call fails, times out, is rate-limited, or produces malformed JSON,
+the complete operation falls back to lexical retrieval so chat continues. This
+strategy is independent of the agent's normal response model and can be
+replaced by another `SemanticRelevanceProvider` later. It remains contextual
+retrieval, not fine-tuning.

@@ -332,3 +332,56 @@ test('semantic retrieval reaches a delivery teaching in a fresh conversation onl
   })
   assert.deepEqual(requests[2].context, [])
 })
+
+test('a failed LLM relevance judge falls back without breaking chat', async () => {
+  const runtime = createRuntime({
+    providers: [
+      {
+        id: 'groq',
+        async generate(request) {
+          return {
+            content: request.context.length
+              ? 'Refund teaching used.'
+              : 'No teaching.',
+          }
+        },
+      },
+    ],
+  })
+  const store = createStore()
+  const client = createOrvelClient({
+    store,
+    runtime,
+    teachingRetriever: createHybridTeachingRetriever({
+      repository: store,
+      semanticRelevanceProvider: {
+        id: 'malformed-judge',
+        async judge() {
+          throw new Error('malformed JSON')
+        },
+      },
+    }),
+    createId: (() => {
+      let id = 0
+      return () => `fallback-${++id}`
+    })(),
+  })
+  const agent = await client.createAgent({
+    name: 'SupportBot',
+    instructions: 'Help customers.',
+    model: { provider: 'groq', model: 'openai/gpt-oss-20b' },
+  })
+  await client.saveTeaching({
+    agentId: agent.id,
+    userInput: 'How long do refunds take?',
+    originalResponse: 'Unknown.',
+    correctedResponse: 'Refunds normally take 5–7 business days.',
+  })
+  const conversation = await client.createConversation(agent.id)
+  const result = await client.sendMessage({
+    conversationId: conversation.id,
+    content: 'When should I expect my refund?',
+  })
+  assert.equal(result.message.content, 'Refund teaching used.')
+  assert.equal(result.teachingIds.length, 1)
+})

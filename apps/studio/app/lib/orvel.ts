@@ -1,7 +1,10 @@
 import { join } from 'node:path'
 
 import { createFileStore } from '@orvel/local'
-import { createGroqProvider } from '@orvel/groq'
+import {
+  createGroqProvider,
+  createGroqSemanticRelevanceProvider,
+} from '@orvel/groq'
 import {
   createOllamaEmbeddingProvider,
   createOllamaProvider,
@@ -19,6 +22,7 @@ const dataPath =
 const store = createFileStore(dataPath)
 const openAIKey = process.env.OPENAI_API_KEY
 const groqKey = process.env.GROQ_API_KEY
+const groqRelevanceModel = process.env.GROQ_RELEVANCE_MODEL
 const ollamaBaseUrl = process.env.OLLAMA_BASE_URL
 const ollamaEmbeddingModel = process.env.OLLAMA_EMBEDDING_MODEL
 const runtime = createRuntime({
@@ -35,15 +39,23 @@ const embeddingProvider = ollamaEmbeddingModel
       ...(ollamaBaseUrl ? { baseUrl: ollamaBaseUrl } : {}),
     })
   : undefined
+const semanticRelevanceProvider =
+  !embeddingProvider && groqKey
+    ? createGroqSemanticRelevanceProvider({
+        apiKey: groqKey,
+        ...(groqRelevanceModel ? { model: groqRelevanceModel } : {}),
+      })
+    : undefined
 
 export const orvel = createOrvelClient({
   store,
   runtime,
-  ...(embeddingProvider
+  ...(embeddingProvider || semanticRelevanceProvider
     ? {
         teachingRetriever: createHybridTeachingRetriever({
           repository: store,
-          embeddingProvider,
+          ...(embeddingProvider ? { embeddingProvider } : {}),
+          ...(semanticRelevanceProvider ? { semanticRelevanceProvider } : {}),
         }),
       }
     : {}),
