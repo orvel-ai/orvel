@@ -1,17 +1,30 @@
 import { join } from 'node:path'
 
 import { createFileStore } from '@orvel/local'
-import { createGroqProvider } from '@orvel/groq'
-import { createOllamaProvider, listOllamaModels } from '@orvel/ollama'
+import {
+  createGroqProvider,
+  createGroqSemanticRelevanceProvider,
+} from '@orvel/groq'
+import {
+  createOllamaEmbeddingProvider,
+  createOllamaProvider,
+  listOllamaModels,
+} from '@orvel/ollama'
 import { createOpenAIProvider } from '@orvel/openai'
-import { createOrvelClient, createRuntime } from '@orvel/sdk'
+import {
+  createHybridTeachingRetriever,
+  createOrvelClient,
+  createRuntime,
+} from '@orvel/sdk'
 
 const dataPath =
   process.env.ORVEL_DATA_PATH ?? join(process.cwd(), '.orvel', 'data.json')
 const store = createFileStore(dataPath)
 const openAIKey = process.env.OPENAI_API_KEY
 const groqKey = process.env.GROQ_API_KEY
+const groqRelevanceModel = process.env.GROQ_RELEVANCE_MODEL
 const ollamaBaseUrl = process.env.OLLAMA_BASE_URL
+const ollamaEmbeddingModel = process.env.OLLAMA_EMBEDDING_MODEL
 const runtime = createRuntime({
   providers: [
     createOllamaProvider(ollamaBaseUrl ? { baseUrl: ollamaBaseUrl } : {}),
@@ -20,7 +33,33 @@ const runtime = createRuntime({
   ],
 })
 
-export const orvel = createOrvelClient({ store, runtime })
+const embeddingProvider = ollamaEmbeddingModel
+  ? createOllamaEmbeddingProvider({
+      model: ollamaEmbeddingModel,
+      ...(ollamaBaseUrl ? { baseUrl: ollamaBaseUrl } : {}),
+    })
+  : undefined
+const semanticRelevanceProvider =
+  !embeddingProvider && groqKey
+    ? createGroqSemanticRelevanceProvider({
+        apiKey: groqKey,
+        ...(groqRelevanceModel ? { model: groqRelevanceModel } : {}),
+      })
+    : undefined
+
+export const orvel = createOrvelClient({
+  store,
+  runtime,
+  ...(embeddingProvider || semanticRelevanceProvider
+    ? {
+        teachingRetriever: createHybridTeachingRetriever({
+          repository: store,
+          ...(embeddingProvider ? { embeddingProvider } : {}),
+          ...(semanticRelevanceProvider ? { semanticRelevanceProvider } : {}),
+        }),
+      }
+    : {}),
+})
 
 export type OllamaAvailability =
   | { readonly available: true; readonly models: readonly string[] }

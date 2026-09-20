@@ -9,7 +9,11 @@ import type {
   ConversationMessage,
   ConversationRepository,
 } from '@orvel/runtime'
-import type { TeachingExample, TeachingRepository } from '@orvel/training'
+import type {
+  TeachingEmbedding,
+  TeachingExample,
+  TeachingRepository,
+} from '@orvel/training'
 
 interface SerializedAgent extends Omit<
   AgentDefinition,
@@ -224,6 +228,20 @@ export class FileStore
       .sort(
         (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
       )
+  }
+
+  async updateTeachingEmbedding(
+    teachingId: string,
+    embedding: TeachingEmbedding,
+  ): Promise<void> {
+    await this.mutate((data) => ({
+      ...data,
+      teachings: data.teachings.map((teaching) =>
+        teaching.id === teachingId
+          ? { ...teaching, semanticEmbedding: embedding }
+          : teaching,
+      ),
+    }))
   }
 
   async deleteTeaching(id: string): Promise<void> {

@@ -42,8 +42,10 @@ runtime.
 - `@orvel/memory` defines how memories are stored and recalled.
 - `@orvel/knowledge` defines how relevant source material is retrieved.
 - `@orvel/skills` defines executable actions and their context.
-- `@orvel/training` defines teaching examples, deterministic retrieval, and
-  inspectable teaching-context construction.
+- `@orvel/training` defines teaching examples, deterministic lexical and hybrid
+  retrieval, the provider-neutral embedding contract, and inspectable
+  teaching-context construction. `@orvel/ollama` optionally implements that
+  embedding contract through its local API; the runtime remains unaware of it.
 - `@orvel/evals` defines cases, normalized results, and the v0.1 contains-text
   evaluator.
 - `@orvel/local` implements the repository contracts as atomic JSON-file

@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { createOllamaProvider, listOllamaModels } from '../dist/index.js'
+import {
+  createOllamaEmbeddingProvider,
+  createOllamaProvider,
+  listOllamaModels,
+} from '../dist/index.js'
 
 const request = {
   model: 'llama3.2:3b',
@@ -89,4 +93,33 @@ test('Ollama rejects malformed and textless responses', async () => {
     }).generate(request),
     /without generated text/,
   )
+})
+
+test('Ollama embedding adapter maps batches without a hosted service', async () => {
+  let received
+  const provider = createOllamaEmbeddingProvider({
+    model: 'embeddinggemma',
+    fetch: async (url, init) => {
+      received = { url, init }
+      return new Response(
+        JSON.stringify({
+          embeddings: [
+            [0.5, 0.5],
+            [1, 0],
+          ],
+        }),
+      )
+    },
+  })
+  const vectors = await provider.embedMany(['delivery', 'order'])
+  assert.equal(provider.id, 'ollama:embeddinggemma')
+  assert.deepEqual(vectors, [
+    [0.5, 0.5],
+    [1, 0],
+  ])
+  assert.equal(received.url, 'http://localhost:11434/api/embed')
+  assert.deepEqual(JSON.parse(received.init.body), {
+    model: 'embeddinggemma',
+    input: ['delivery', 'order'],
+  })
 })

@@ -4,6 +4,7 @@ import type {
   ModelRequest,
   ModelResponse,
 } from '@orvel/runtime'
+import type { EmbeddingProvider } from '@orvel/training'
 
 export interface OllamaProviderOptions {
   readonly baseUrl?: string
@@ -20,6 +21,11 @@ interface OllamaChatResponse {
 
 interface OllamaTagsResponse {
   readonly models?: readonly { readonly name?: string }[]
+  readonly error?: string
+}
+
+interface OllamaEmbedResponse {
+  readonly embeddings?: readonly (readonly number[])[]
   readonly error?: string
 }
 
@@ -146,5 +152,73 @@ export function createOllamaProvider({
           : {}),
       }
     },
+  }
+}
+
+export interface OllamaEmbeddingProviderOptions extends OllamaProviderOptions {
+  readonly model: string
+}
+
+export function createOllamaEmbeddingProvider({
+  model,
+  baseUrl = 'http://localhost:11434',
+  fetch: fetchImplementation = globalThis.fetch,
+}: OllamaEmbeddingProviderOptions): EmbeddingProvider {
+  const normalizedModel = model.trim()
+  if (!normalizedModel)
+    throw new Error('An Ollama embedding model is required.')
+
+  async function embedMany(
+    input: readonly string[],
+  ): Promise<readonly (readonly number[])[]> {
+    let response: Response
+    try {
+      response = await fetchImplementation(endpoint(baseUrl, '/api/embed'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: normalizedModel, input }),
+      })
+    } catch (error) {
+      throw connectionError(error)
+    }
+    let payload: OllamaEmbedResponse
+    try {
+      payload = (await response.json()) as OllamaEmbedResponse
+    } catch {
+      throw new Error('Ollama returned a malformed embedding response.')
+    }
+    if (!response.ok) {
+      const detail =
+        payload.error ??
+        `Ollama embedding request failed with status ${response.status}.`
+      if (response.status === 404 || /not found|not installed/i.test(detail)) {
+        throw new Error(
+          `Ollama embedding model "${normalizedModel}" is not installed. Pull it with \`ollama pull ${normalizedModel}\` and try again.`,
+        )
+      }
+      throw new Error(`Ollama embedding request failed: ${detail}`)
+    }
+    if (
+      !Array.isArray(payload.embeddings) ||
+      payload.embeddings.length !== input.length ||
+      payload.embeddings.some(
+        (values) =>
+          !Array.isArray(values) ||
+          values.length === 0 ||
+          !values.every(Number.isFinite),
+      )
+    ) {
+      throw new Error('Ollama returned a malformed embedding response.')
+    }
+    return payload.embeddings
+  }
+
+  return {
+    id: `ollama:${normalizedModel}`,
+    async embed(input) {
+      const values = await embedMany([input])
+      return values[0]!
+    },
+    embedMany,
   }
 }

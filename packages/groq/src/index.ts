@@ -4,11 +4,20 @@ import type {
   ModelRequest,
   ModelResponse,
 } from '@orvel/runtime'
+import type {
+  SemanticRelevanceInput,
+  SemanticRelevanceProvider,
+  SemanticRelevanceResult,
+} from '@orvel/training'
 
 export interface GroqProviderOptions {
   readonly apiKey?: string
   readonly baseUrl?: string
   readonly fetch?: typeof globalThis.fetch
+}
+
+export interface GroqSemanticRelevanceProviderOptions extends GroqProviderOptions {
+  readonly model?: string
 }
 
 interface GroqResponse {
@@ -132,6 +141,90 @@ export function createGroqProvider({
               },
             }
           : {}),
+      }
+    },
+  }
+}
+
+export function createGroqSemanticRelevanceProvider({
+  apiKey,
+  model = 'openai/gpt-oss-20b',
+  baseUrl = 'https://api.groq.com/openai/v1',
+  fetch: fetchImplementation = globalThis.fetch,
+}: GroqSemanticRelevanceProviderOptions): SemanticRelevanceProvider {
+  return {
+    id: `groq:${model}`,
+    async judge(
+      input: SemanticRelevanceInput,
+    ): Promise<SemanticRelevanceResult> {
+      if (!apiKey) {
+        throw new Error(
+          'Groq is not configured. Add GROQ_API_KEY to your environment.',
+        )
+      }
+      let response: Response
+      try {
+        response = await fetchImplementation(
+          `${baseUrl.replace(/\/$/, '')}/chat/completions`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model,
+              temperature: 0,
+              response_format: { type: 'json_object' },
+              messages: [
+                {
+                  role: 'system',
+                  content:
+                    'Classify whether a stored teaching would be useful for the new user message. Do not answer the user. Return only JSON with boolean relevant and number confidence from 0 to 1.',
+                },
+                {
+                  role: 'user',
+                  content: JSON.stringify({
+                    newUserMessage: input.query,
+                    teaching: {
+                      userInput: input.teaching.userInput,
+                      correctedResponse: input.teaching.correctedResponse,
+                      explanation: input.teaching.explanation,
+                    },
+                  }),
+                },
+              ],
+            }),
+          },
+        )
+      } catch {
+        throw new Error('Could not reach Groq for semantic teaching retrieval.')
+      }
+      const payload = await readJson(response)
+      if (!response.ok) throw errorFor(response, payload, model)
+      const content = payload.choices?.[0]?.message?.content
+      if (!content)
+        throw new Error('Groq returned no semantic relevance result.')
+      let result: unknown
+      try {
+        result = JSON.parse(content)
+      } catch {
+        throw new Error('Groq returned malformed semantic relevance JSON.')
+      }
+      if (
+        typeof result !== 'object' ||
+        result === null ||
+        typeof (result as { relevant?: unknown }).relevant !== 'boolean' ||
+        typeof (result as { confidence?: unknown }).confidence !== 'number' ||
+        !Number.isFinite((result as { confidence: number }).confidence) ||
+        (result as { confidence: number }).confidence < 0 ||
+        (result as { confidence: number }).confidence > 1
+      ) {
+        throw new Error('Groq returned malformed semantic relevance JSON.')
+      }
+      return {
+        relevant: (result as { relevant: boolean }).relevant,
+        confidence: (result as { confidence: number }).confidence,
       }
     },
   }

@@ -43,6 +43,10 @@ test('persists agents, conversations, messages, and teachings across store insta
       correctedResponse: '5–7 business days.',
       createdAt: timestamp,
     })
+    await store.updateTeachingEmbedding('teaching-1', {
+      provider: 'test-embedding-v1',
+      values: [0.25, 0.75],
+    })
 
     const reopenedStore = createFileStore(dataPath)
     assert.equal((await reopenedStore.listAgents())[0].name, 'SupportBot')
@@ -53,6 +57,10 @@ test('persists agents, conversations, messages, and teachings across store insta
     assert.equal(
       (await reopenedStore.listTeachings('agent-1'))[0].correctedResponse,
       '5–7 business days.',
+    )
+    assert.deepEqual(
+      (await reopenedStore.listTeachings('agent-1'))[0].semanticEmbedding,
+      { provider: 'test-embedding-v1', values: [0.25, 0.75] },
     )
   } finally {
     await rm(directory, { recursive: true, force: true })

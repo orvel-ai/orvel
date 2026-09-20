@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  createHybridTeachingRetriever,
   createKeywordTeachingRetriever,
   createTeachingContext,
 } from '../dist/index.js'
@@ -17,6 +18,29 @@ const refundTeaching = {
 }
 
 const repository = { listTeachings: async () => [refundTeaching] }
+
+const deliveryTeaching = {
+  id: 'delivery-teaching',
+  agentId: 'support-bot',
+  userInput: 'How long does delivery take?',
+  originalResponse: 'I am not sure.',
+  correctedResponse: 'Delivery typically takes 5 to 7 days maximum.',
+  createdAt: new Date('2026-01-02T00:00:00.000Z'),
+}
+
+function createSemanticProvider() {
+  const vectorFor = (text) =>
+    /delivery|order|package|eta|parcel|arrive/i.test(text) ? [1, 0] : [0, 1]
+  return {
+    id: 'fake-local-semantic-v1',
+    async embed(text) {
+      return vectorFor(text)
+    },
+    async embedMany(texts) {
+      return texts.map(vectorFor)
+    },
+  }
+}
 
 test('retrieves a related teaching using deterministic token overlap', async () => {
   const retriever = createKeywordTeachingRetriever({ repository })
@@ -51,4 +75,228 @@ test('formats retrieved teaching as explicit creator context', () => {
     /Creator-corrected response: Refunds normally take 5–7 business days/,
   )
   assert.match(context[0].content, /teaching id: refund-teaching/)
+})
+
+test('hybrid retrieval matches delivery paraphrases through semantic similarity', async () => {
+  const retriever = createHybridTeachingRetriever({
+    repository: { listTeachings: async () => [deliveryTeaching] },
+    embeddingProvider: createSemanticProvider(),
+  })
+
+  for (const question of [
+    'When will I get my order?',
+    'When should my package arrive?',
+    "What's the ETA on my delivery?",
+    'How long before my parcel gets here?',
+  ]) {
+    const matches = await retriever.retrieve('support-bot', question)
+    assert.equal(matches.length, 1, question)
+    assert.equal(matches[0].teaching.id, 'delivery-teaching')
+    assert.ok(matches[0].semanticScore >= 0.72)
+  }
+})
+
+test('hybrid retrieval rejects unrelated prompts and keeps agents isolated', async () => {
+  const retriever = createHybridTeachingRetriever({
+    repository: {
+      listTeachings: async (agentId) =>
+        agentId === 'support-bot' ? [deliveryTeaching] : [],
+    },
+    embeddingProvider: createSemanticProvider(),
+  })
+
+  for (const question of [
+    'What color is the sky?',
+    'Write a JavaScript function that adds two numbers.',
+    'What is the capital of Japan?',
+  ]) {
+    assert.deepEqual(await retriever.retrieve('support-bot', question), [])
+  }
+  assert.deepEqual(
+    await retriever.retrieve('another-agent', 'When will I get my order?'),
+    [],
+  )
+})
+
+test('semantic similarity rejects generic lexical overlap with different intent', async () => {
+  const accountTeaching = {
+    id: 'account-teaching',
+    agentId: 'support-bot',
+    userInput: 'How do I change my account password?',
+    originalResponse: 'I do not know.',
+    correctedResponse: 'Use account settings to change your password.',
+    createdAt: new Date('2026-01-03T00:00:00.000Z'),
+  }
+  const embeddingProvider = {
+    id: 'intent-test-v1',
+    async embed(text) {
+      return /account|password|settings/i.test(text) ? [1, 0] : [0, 1]
+    },
+    async embedMany(texts) {
+      return Promise.all(texts.map((text) => this.embed(text)))
+    },
+  }
+  const retriever = createHybridTeachingRetriever({
+    repository: { listTeachings: async () => [accountTeaching] },
+    embeddingProvider,
+  })
+
+  const matches = await retriever.retrieve(
+    'support-bot',
+    'How do I change my delivery address?',
+  )
+  assert.deepEqual(matches, [])
+})
+
+test('LLM relevance retrieval finds paraphrases, ranks relevant teachings, and deduplicates', async () => {
+  const duplicateDelivery = { ...deliveryTeaching, id: 'duplicate-delivery' }
+  const unrelated = { ...refundTeaching, id: 'unrelated-refund' }
+  const retriever = createHybridTeachingRetriever({
+    repository: {
+      listTeachings: async (agentId) =>
+        agentId === 'support-bot'
+          ? [deliveryTeaching, duplicateDelivery, unrelated]
+          : [],
+    },
+    semanticRelevanceProvider: {
+      id: 'fake-judge',
+      async judge({ query, teaching }) {
+        return {
+          relevant:
+            /package arrive/i.test(query) &&
+            /delivery/i.test(teaching.userInput),
+          confidence: teaching.id === 'delivery-teaching' ? 0.95 : 0.91,
+        }
+      },
+    },
+  })
+  const matches = await retriever.retrieve(
+    'support-bot',
+    'When should my package arrive?',
+  )
+  assert.deepEqual(
+    matches.map((match) => match.teaching.id),
+    ['delivery-teaching'],
+  )
+  assert.equal(matches[0].strategy, 'llm')
+  assert.deepEqual(
+    await retriever.retrieve('other-agent', 'When should my package arrive?'),
+    [],
+  )
+})
+
+test('LLM relevance retrieval rejects misleading lexical overlap and falls back on failures', async () => {
+  const passwordTeaching = {
+    id: 'password-teaching',
+    agentId: 'support-bot',
+    userInput: 'How do I change my account password?',
+    originalResponse: 'I do not know.',
+    correctedResponse: 'Use account settings to change your password.',
+    createdAt: new Date('2026-01-04T00:00:00.000Z'),
+  }
+  const rejected = createHybridTeachingRetriever({
+    repository: { listTeachings: async () => [passwordTeaching] },
+    semanticRelevanceProvider: {
+      id: 'fake-judge',
+      async judge() {
+        return { relevant: false, confidence: 0.99 }
+      },
+    },
+  })
+  assert.deepEqual(
+    await rejected.retrieve(
+      'support-bot',
+      'How do I change my delivery address?',
+    ),
+    [],
+  )
+
+  const fallback = createHybridTeachingRetriever({
+    repository: { listTeachings: async () => [refundTeaching] },
+    semanticRelevanceProvider: {
+      id: 'broken-judge',
+      async judge() {
+        throw new Error('malformed response')
+      },
+    },
+  })
+  const matches = await fallback.retrieve(
+    'support-bot',
+    'When should I expect my refund?',
+  )
+  assert.equal(matches[0].strategy, 'lexical')
+})
+
+test('LLM relevance retrieval enforces top-K after ranking', async () => {
+  const secondDelivery = {
+    ...deliveryTeaching,
+    id: 'second-delivery',
+    correctedResponse: 'Orders arrive within one week.',
+  }
+  const retriever = createHybridTeachingRetriever({
+    repository: {
+      listTeachings: async () => [deliveryTeaching, secondDelivery],
+    },
+    limit: 1,
+    semanticRelevanceProvider: {
+      id: 'fake-judge',
+      async judge({ teaching }) {
+        return {
+          relevant: true,
+          confidence: teaching.id === 'delivery-teaching' ? 0.95 : 0.85,
+        }
+      },
+    },
+  })
+  const matches = await retriever.retrieve(
+    'support-bot',
+    'When should my package arrive?',
+  )
+  assert.deepEqual(
+    matches.map((match) => match.teaching.id),
+    ['delivery-teaching'],
+  )
+})
+
+test('hybrid retrieval caches embeddings and falls back to lexical results', async () => {
+  let teaching = { ...deliveryTeaching }
+  let embedManyCalls = 0
+  const repositoryWithCache = {
+    async listTeachings() {
+      return [teaching]
+    },
+    async updateTeachingEmbedding(id, embedding) {
+      assert.equal(id, 'delivery-teaching')
+      teaching = { ...teaching, semanticEmbedding: embedding }
+    },
+  }
+  const embeddingProvider = {
+    ...createSemanticProvider(),
+    async embedMany(texts) {
+      embedManyCalls += 1
+      return texts.map(() => [1, 0])
+    },
+  }
+  const retriever = createHybridTeachingRetriever({
+    repository: repositoryWithCache,
+    embeddingProvider,
+  })
+  await retriever.retrieve('support-bot', 'When will I get my order?')
+  await retriever.retrieve('support-bot', 'When should my package arrive?')
+  assert.equal(embedManyCalls, 1)
+
+  const fallback = createHybridTeachingRetriever({
+    repository: { listTeachings: async () => [refundTeaching] },
+    embeddingProvider: {
+      id: 'unavailable',
+      async embed() {
+        throw new Error('offline')
+      },
+    },
+  })
+  const matches = await fallback.retrieve(
+    'support-bot',
+    'When should I expect my refund?',
+  )
+  assert.equal(matches[0].strategy, 'lexical')
 })
