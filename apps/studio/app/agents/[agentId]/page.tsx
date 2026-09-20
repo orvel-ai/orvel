@@ -67,7 +67,11 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
     (agent.brain.provider !== 'ollama' || ollama?.available !== false)
 
   return (
-    <StudioShell agents={agents} selectedAgentId={agent.id}>
+    <StudioShell
+      agents={agents}
+      currentSection="agents"
+      selectedAgentId={agent.id}
+    >
       <div className="workspace-topbar">
         <div className="topbar-search">
           <span>Search anything…</span>

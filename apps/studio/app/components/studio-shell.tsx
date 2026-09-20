@@ -19,12 +19,14 @@ import { Avatar, Icon } from './ui'
 type StudioShellProps = {
   readonly agents: readonly AgentDefinition[]
   readonly selectedAgentId?: string
+  readonly currentSection?: 'home' | 'agents'
   readonly children: ReactNode
 }
 
 export function StudioShell({
   agents,
   selectedAgentId,
+  currentSection,
   children,
 }: StudioShellProps) {
   return (
@@ -42,11 +44,17 @@ export function StudioShell({
           <kbd>⌘ K</kbd>
         </label>
         <nav className="sidebar-nav">
-          <Link className="sidebar-item active" href="/">
+          <Link
+            className={`sidebar-item ${currentSection === 'home' ? 'active' : ''}`}
+            href="/"
+          >
             <Icon icon={Home01Icon} />
             Home
           </Link>
-          <Link className="sidebar-item" href="/">
+          <Link
+            className={`sidebar-item ${currentSection === 'agents' ? 'active' : ''}`}
+            href="/agents"
+          >
             <Icon icon={DashboardSquare01Icon} />
             Agents
           </Link>

@@ -47,7 +47,7 @@ export default async function Home({ searchParams }: PageProps) {
     .slice(0, 4)
 
   return (
-    <StudioShell agents={agents}>
+    <StudioShell agents={agents} currentSection="home">
       <main className="home-workspace">
         <div className="workspace-topbar">
           <div className="topbar-search">
