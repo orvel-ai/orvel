@@ -88,20 +88,9 @@ summary:focus-visible {
   text-decoration: none;
 }
 .brand-mark {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border-radius: 8px;
-  background: #171716;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
-}
-.brand-mark span {
-  width: 10px;
-  height: 10px;
-  border-radius: 50% 50% 2px 50%;
-  transform: rotate(-45deg);
-  background: #d8efff;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }
 .command-field,
 .topbar-search {

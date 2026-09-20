@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import type { ReactNode } from 'react'
 
 import {
@@ -33,9 +34,14 @@ export function StudioShell({
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Orvel Studio navigation">
         <Link className="brand" href="/">
-          <span className="brand-mark">
-            <span />
-          </span>
+          <Image
+            alt="Orvel"
+            className="brand-mark"
+            height={28}
+            priority
+            src="/orvel-mark.png"
+            width={28}
+          />
           <span>Orvel</span>
         </Link>
         <label className="command-field">
