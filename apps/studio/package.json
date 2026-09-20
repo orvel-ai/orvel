@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@orvel/local": "workspace:*",
+    "@orvel/groq": "workspace:*",
     "@orvel/ollama": "workspace:*",
     "@orvel/openai": "workspace:*",
     "@orvel/sdk": "workspace:*",

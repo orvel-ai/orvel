@@ -209,3 +209,50 @@ test('Ollama-backed agents receive only relevant teaching context', async () => 
   assert.match(requests[0].context[0].content, /Refunds normally take/)
   assert.deepEqual(requests[1].context, [])
 })
+
+test('Groq-backed agents receive only relevant teaching context', async () => {
+  const requests = []
+  const runtime = createRuntime({
+    providers: [
+      {
+        id: 'groq',
+        async generate(request) {
+          requests.push(request)
+          return { content: 'Cloud response.' }
+        },
+      },
+    ],
+  })
+  let nextId = 0
+  const client = createOrvelClient({
+    store: createStore(),
+    runtime,
+    createId: () => `groq-${++nextId}`,
+  })
+  const agent = await client.createAgent({
+    name: 'Groq SupportBot',
+    instructions: 'Help customers.',
+    model: { provider: 'groq', model: 'openai/gpt-oss-20b' },
+  })
+  await client.saveTeaching({
+    agentId: agent.id,
+    userInput: 'How long do refunds take?',
+    originalResponse: 'I do not know.',
+    correctedResponse: 'Refunds normally take 5–7 business days.',
+  })
+
+  const refundConversation = await client.createConversation(agent.id)
+  await client.sendMessage({
+    conversationId: refundConversation.id,
+    content: 'When should I expect my refund?',
+  })
+  const skyConversation = await client.createConversation(agent.id)
+  await client.sendMessage({
+    conversationId: skyConversation.id,
+    content: 'What color is the sky?',
+  })
+
+  assert.equal(requests[0].context.length, 1)
+  assert.match(requests[0].context[0].content, /Refunds normally take/)
+  assert.deepEqual(requests[1].context, [])
+})

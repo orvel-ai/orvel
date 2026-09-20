@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 
 import { createFileStore } from '@orvel/local'
+import { createGroqProvider } from '@orvel/groq'
 import { createOllamaProvider, listOllamaModels } from '@orvel/ollama'
 import { createOpenAIProvider } from '@orvel/openai'
 import { createOrvelClient, createRuntime } from '@orvel/sdk'
@@ -9,10 +10,12 @@ const dataPath =
   process.env.ORVEL_DATA_PATH ?? join(process.cwd(), '.orvel', 'data.json')
 const store = createFileStore(dataPath)
 const openAIKey = process.env.OPENAI_API_KEY
+const groqKey = process.env.GROQ_API_KEY
 const ollamaBaseUrl = process.env.OLLAMA_BASE_URL
 const runtime = createRuntime({
   providers: [
     createOllamaProvider(ollamaBaseUrl ? { baseUrl: ollamaBaseUrl } : {}),
+    createGroqProvider(groqKey ? { apiKey: groqKey } : {}),
     createOpenAIProvider(openAIKey ? { apiKey: openAIKey } : {}),
   ],
 })
@@ -40,5 +43,9 @@ export async function getOllamaAvailability(): Promise<OllamaAvailability> {
 }
 
 export function isProviderConfigured(provider: string): boolean {
-  return provider === 'ollama' || (provider === 'openai' && Boolean(openAIKey))
+  return (
+    provider === 'ollama' ||
+    (provider === 'groq' && Boolean(groqKey)) ||
+    (provider === 'openai' && Boolean(openAIKey))
+  )
 }

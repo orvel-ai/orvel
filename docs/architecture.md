@@ -12,6 +12,7 @@ Studio server ──► SDK ──► runtime, training, evals
       ├── local store ───────────┤
       ├── OpenAI adapter ────────┘
       └── Ollama adapter ────────┘
+      └── Groq adapter ──────────┘
 
 Other focused packages: memory, knowledge, skills
 ```
@@ -31,9 +32,10 @@ The runtime now composes instructions, explicit runtime context, and conversatio
 messages before delegating to a provider. It does not know how teachings are
 retrieved, how data is persisted, or how any provider's HTTP API works.
 
-`@orvel/openai` and `@orvel/ollama` are provider adapters. OpenAI uses a
-server-supplied key; Ollama uses its local HTTP API with no key. Both implement
-`ModelProvider`; no provider package is imported by the runtime.
+`@orvel/openai`, `@orvel/ollama`, and `@orvel/groq` are provider adapters.
+OpenAI and Groq use server-supplied keys; Ollama uses its local HTTP API with no
+key. All implement `ModelProvider`; no provider package is imported by the
+runtime.
 
 ## Focused packages
 
