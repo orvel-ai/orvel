@@ -113,3 +113,39 @@ test('creates agents without general knowledge for backwards compatibility', () 
   )
   assert.equal(created.generalKnowledge, undefined)
 })
+
+test('accepts General Knowledge at the size limit and rejects it above the limit', () => {
+  const atLimit = 'a'.repeat(10_000)
+  assert.equal(
+    createAgent(
+      {
+        name: 'Guide',
+        instructions: 'Answer clearly.',
+        generalKnowledge: atLimit,
+        model: { provider: 'example', model: 'example-model' },
+      },
+      { id: 'limit-guide', now: agent.createdAt },
+    ).generalKnowledge.length,
+    10_000,
+  )
+  assert.throws(
+    () =>
+      createAgent(
+        {
+          name: 'Guide',
+          instructions: 'Answer clearly.',
+          generalKnowledge: 'a'.repeat(10_001),
+          model: { provider: 'example', model: 'example-model' },
+        },
+        { id: 'too-large-guide', now: agent.createdAt },
+      ),
+    /General Knowledge cannot exceed 10,000 characters/,
+  )
+})
+
+test('rejects General Knowledge above the size limit during updates', () => {
+  assert.throws(
+    () => updateAgent(agent, { generalKnowledge: 'a'.repeat(10_001) }),
+    /General Knowledge cannot exceed 10,000 characters/,
+  )
+})

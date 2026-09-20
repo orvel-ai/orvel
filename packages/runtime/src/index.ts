@@ -23,6 +23,8 @@ export interface AgentDefinition {
   readonly updatedAt: Date
 }
 
+export const GENERAL_KNOWLEDGE_MAX_LENGTH = 10_000
+
 export interface CreateAgentInput {
   readonly name: string
   readonly description?: string
@@ -137,6 +139,13 @@ export function createAgent(
   const description = input.description?.trim()
   const generalKnowledge = input.generalKnowledge?.trim()
 
+  if (
+    generalKnowledge &&
+    generalKnowledge.length > GENERAL_KNOWLEDGE_MAX_LENGTH
+  ) {
+    throw new Error('General Knowledge cannot exceed 10,000 characters.')
+  }
+
   return {
     id: options.id,
     name,
@@ -177,6 +186,12 @@ export function updateAgent(
 
   if (!name) throw new Error('An agent name is required.')
   if (!instructions) throw new Error('Agent instructions are required.')
+  if (
+    generalKnowledge &&
+    generalKnowledge.length > GENERAL_KNOWLEDGE_MAX_LENGTH
+  ) {
+    throw new Error('General Knowledge cannot exceed 10,000 characters.')
+  }
   if (!provider || !modelName)
     throw new Error('A model provider and model are required.')
 

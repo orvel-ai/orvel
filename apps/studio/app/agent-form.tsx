@@ -11,6 +11,7 @@ type AgentFormProps = {
 
 export function AgentForm({ ollamaModels, ollamaError }: AgentFormProps) {
   const [provider, setProvider] = useState('ollama')
+  const [generalKnowledge, setGeneralKnowledge] = useState('')
   const isOllama = provider === 'ollama'
   const isGroq = provider === 'groq'
   const defaultModel = isOllama
@@ -50,13 +51,17 @@ export function AgentForm({ ollamaModels, ollamaError }: AgentFormProps) {
         <textarea
           name="generalKnowledge"
           rows={6}
+          maxLength={10000}
+          value={generalKnowledge}
+          onChange={(event) => setGeneralKnowledge(event.target.value)}
           placeholder={
             'Delivery takes 5–7 business days.\nReturns are accepted within 14 days.\nWe deliver throughout Nigeria.'
           }
         />
         <small>
           Add information this agent should know about your business, product,
-          or topic.
+          or topic. {generalKnowledge.length.toLocaleString()} / 10,000
+          characters
         </small>
       </label>
       <div className="form-row">

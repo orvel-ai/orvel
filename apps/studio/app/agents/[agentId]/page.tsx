@@ -347,6 +347,7 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
               <textarea
                 name="generalKnowledge"
                 rows={10}
+                maxLength={10000}
                 defaultValue={agent.generalKnowledge ?? ''}
                 placeholder={
                   'Delivery takes 5–7 business days.\nReturns are accepted within 14 days.\nWe deliver throughout Nigeria.'
@@ -354,7 +355,9 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
               />
               <small>
                 Add information this agent should know about your business,
-                product, or topic.
+                product, or topic.{' '}
+                {(agent.generalKnowledge?.length ?? 0).toLocaleString()} /
+                10,000 characters
               </small>
             </label>
             <button type="submit">Save General Knowledge</button>
