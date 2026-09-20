@@ -365,8 +365,9 @@ export function createHybridTeachingRetriever({
           ? cosineSimilarity(queryEmbedding, values)
           : undefined
         const eligible =
-          match.lexicalScore >= lexicalMinimumScore ||
-          (semanticScore !== undefined && semanticScore >= semanticMinimumScore)
+          semanticScore !== undefined
+            ? semanticScore >= semanticMinimumScore
+            : match.lexicalScore >= lexicalMinimumScore
         if (!eligible) continue
         const score =
           semanticScore === undefined

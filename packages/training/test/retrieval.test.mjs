@@ -118,6 +118,36 @@ test('hybrid retrieval rejects unrelated prompts and keeps agents isolated', asy
   )
 })
 
+test('semantic similarity rejects generic lexical overlap with different intent', async () => {
+  const accountTeaching = {
+    id: 'account-teaching',
+    agentId: 'support-bot',
+    userInput: 'How do I change my account password?',
+    originalResponse: 'I do not know.',
+    correctedResponse: 'Use account settings to change your password.',
+    createdAt: new Date('2026-01-03T00:00:00.000Z'),
+  }
+  const embeddingProvider = {
+    id: 'intent-test-v1',
+    async embed(text) {
+      return /account|password|settings/i.test(text) ? [1, 0] : [0, 1]
+    },
+    async embedMany(texts) {
+      return Promise.all(texts.map((text) => this.embed(text)))
+    },
+  }
+  const retriever = createHybridTeachingRetriever({
+    repository: { listTeachings: async () => [accountTeaching] },
+    embeddingProvider,
+  })
+
+  const matches = await retriever.retrieve(
+    'support-bot',
+    'How do I change my delivery address?',
+  )
+  assert.deepEqual(matches, [])
+})
+
 test('hybrid retrieval caches embeddings and falls back to lexical results', async () => {
   let teaching = { ...deliveryTeaching }
   let embedManyCalls = 0

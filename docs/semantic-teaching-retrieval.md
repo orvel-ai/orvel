@@ -13,8 +13,9 @@ For every saved teaching scoped to the current agent, the hybrid retriever:
 1. calculates the existing lexical token-overlap score;
 2. obtains cosine similarity between the query vector and the teaching vector
    when an embedding provider is configured;
-3. accepts a teaching when lexical score is at least `0.12` or semantic score
-   is at least `0.72`;
+3. when both query and teaching vectors are available, accepts a teaching only
+   when semantic score is at least `0.72`; otherwise falls back to lexical score
+   of at least `0.12`;
 4. ranks semantic candidates with `0.35 × lexical + 0.65 × semantic`, or uses
    lexical score alone when no vector is available;
 5. sorts ties deterministically by semantic score, lexical score, and teaching
@@ -28,8 +29,9 @@ goes into model context.
 
 For example, a teaching for “How long does delivery take?” can be retrieved for
 “When will I get my order?” even when the words differ, because their local
-embedding vectors are similar. “What color is the sky?” is rejected unless it
-also clears one of the explicit thresholds.
+embedding vectors are similar. A generic lexical overlap such as “How do I
+change…” is not enough to retrieve an account-password teaching for a delivery
+address question when their semantic vectors differ.
 
 ## Local, opt-in embeddings
 
