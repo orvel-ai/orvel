@@ -73,6 +73,7 @@ export interface OrvelClient {
   getAgent(id: string): Promise<AgentDefinition | undefined>
   listAgents(): Promise<readonly AgentDefinition[]>
   createConversation(agentId: string): Promise<Conversation>
+  renameConversation(id: string, title: string): Promise<Conversation>
   getConversation(id: string): Promise<Conversation | undefined>
   listConversations(agentId: string): Promise<readonly Conversation[]>
   listMessages(conversationId: string): Promise<readonly ConversationMessage[]>
@@ -143,11 +144,27 @@ export function createOrvelClient({
       const conversation = {
         id: createId(),
         agentId,
+        title: 'New conversation',
         createdAt: timestamp,
         updatedAt: timestamp,
       }
       await store.createConversation(conversation)
       return conversation
+    },
+    async renameConversation(id, title) {
+      const conversation = await store.getConversation(id)
+      if (!conversation) throw new Error('Conversation not found.')
+      const name = title.trim()
+      if (!name) throw new Error('A conversation name is required.')
+      if (name.length > 120) {
+        throw new Error('A conversation name cannot exceed 120 characters.')
+      }
+      if (!store.updateConversation) {
+        throw new Error('This store does not support renaming conversations.')
+      }
+      const renamed = { ...conversation, title: name, updatedAt: now() }
+      await store.updateConversation(renamed)
+      return renamed
     },
     getConversation: (id) => store.getConversation(id),
     listConversations: (agentId) => store.listConversations(agentId),

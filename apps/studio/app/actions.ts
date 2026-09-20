@@ -89,6 +89,21 @@ export async function startConversationAction(
   redirect(`/agents/${agentId}?conversation=${conversation.id}`)
 }
 
+export async function renameConversationAction(
+  formData: FormData,
+): Promise<void> {
+  const agentId = value(formData, 'agentId')
+  const conversationId = value(formData, 'conversationId')
+  const destination = `/agents/${agentId}?conversation=${conversationId}`
+  try {
+    await orvel.renameConversation(conversationId, value(formData, 'title'))
+  } catch (error) {
+    withMessage(destination, error)
+  }
+  revalidatePath(`/agents/${agentId}`)
+  redirect(destination)
+}
+
 export async function sendMessageAction(formData: FormData): Promise<void> {
   const agentId = value(formData, 'agentId')
   const conversationId = value(formData, 'conversationId')

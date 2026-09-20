@@ -23,6 +23,7 @@ import type {
 import {
   createEvalAction,
   deleteTeachingAction,
+  renameConversationAction,
   runEvalAction,
   sendMessageAction,
   startConversationAction,
@@ -232,7 +233,7 @@ export function ChatWorkspace({
               href={`/agents/${agent.id}?conversation=${item.id}`}
               key={item.id}
             >
-              <span>Conversation</span>
+              <span>{item.title ?? 'New conversation'}</span>
               <small>{time(item.updatedAt)}</small>
             </Link>
           ))
@@ -249,7 +250,7 @@ export function ChatWorkspace({
             <option value="">Choose a conversation</option>
             {conversations.map((item, index) => (
               <option key={item.id} value={item.id}>
-                Conversation {conversations.length - index}
+                {item.title ?? `Conversation ${conversations.length - index}`}
               </option>
             ))}
           </select>
@@ -259,6 +260,28 @@ export function ChatWorkspace({
         </button>
       </form>
       <div className="chat-canvas">
+        <div className="chat-titlebar">
+          {conversation ? (
+            <form action={renameConversationAction}>
+              <input name="agentId" type="hidden" value={agent.id} />
+              <input
+                aria-label="Conversation name"
+                defaultValue={conversation.title ?? 'New conversation'}
+                maxLength={120}
+                name="title"
+                type="text"
+              />
+              <input
+                name="conversationId"
+                type="hidden"
+                value={conversation.id}
+              />
+              <button className="quiet-button" type="submit">
+                Save
+              </button>
+            </form>
+          ) : null}
+        </div>
         <div className="chat-scroll-region">
           {!providerReady ? (
             <p className="setup-message">
