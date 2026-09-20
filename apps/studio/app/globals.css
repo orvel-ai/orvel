@@ -404,12 +404,15 @@ summary:focus-visible {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 294px;
   gap: 22px;
+  align-items: start;
   padding-top: 20px;
 }
 .workspace-main {
   min-width: 0;
 }
 .inspector {
+  position: sticky;
+  top: 18px;
   display: grid;
   align-content: start;
   gap: 14px;
@@ -513,7 +516,8 @@ summary:focus-visible {
 .chat-workspace {
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr);
-  min-height: 670px;
+  height: clamp(540px, calc(100vh - 300px), 720px);
+  min-height: 0;
   overflow: hidden;
 }
 .thread-list {
@@ -521,8 +525,12 @@ summary:focus-visible {
   align-content: start;
   gap: 5px;
   border-right: 1px solid rgba(24, 24, 22, 0.08);
+  overflow-y: auto;
   padding: 12px;
   background: rgba(247, 247, 244, 0.5);
+}
+.conversation-picker {
+  display: none;
 }
 .new-thread,
 .quiet-button {
@@ -580,6 +588,11 @@ summary:focus-visible {
   display: grid;
   min-height: 0;
   grid-template-rows: minmax(0, 1fr) auto;
+}
+.chat-scroll-region {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .message-list {
   display: grid;
@@ -702,6 +715,8 @@ summary:focus-visible {
   line-height: 1.45;
 }
 .premium-composer {
+  position: relative;
+  z-index: 1;
   margin: 0 17px 17px;
   border: 1px solid rgba(24, 24, 22, 0.12);
   border-radius: 14px;
@@ -713,7 +728,7 @@ summary:focus-visible {
   width: 100%;
   border: 0;
   outline: 0;
-  resize: vertical;
+  resize: none;
   padding: 3px;
   background: transparent;
   color: #30302d;
@@ -726,6 +741,11 @@ summary:focus-visible {
   justify-content: space-between;
   gap: 9px;
   padding-top: 8px;
+}
+.composer-footer > span {
+  color: #8b918d;
+  font-size: 0.68rem;
+  line-height: 1.35;
 }
 .composer-options {
   display: flex;
@@ -2077,9 +2097,42 @@ summary:focus-visible {
   }
   .chat-workspace {
     grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: clamp(520px, calc(100vh - 170px), 680px);
   }
   .thread-list {
     display: none;
+  }
+  .conversation-picker {
+    display: flex;
+    align-items: end;
+    gap: 8px;
+    border-bottom: 1px solid rgba(24, 24, 22, 0.08);
+    padding: 9px 12px;
+    background: rgba(247, 247, 244, 0.5);
+  }
+  .conversation-picker label {
+    display: grid;
+    min-width: 0;
+    flex: 1;
+    gap: 3px;
+    color: #8b8b85;
+    font-size: 0.63rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+  .conversation-picker select {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: #40403c;
+    font-size: 0.78rem;
+  }
+  .conversation-picker .quiet-button {
+    padding: 6px 9px;
   }
   .chat-message {
     max-width: 100%;
@@ -2089,6 +2142,9 @@ summary:focus-visible {
   }
   .premium-composer {
     margin: 10px;
+  }
+  .composer-footer > span {
+    max-width: 210px;
   }
   .composer-options button {
     font-size: 0;

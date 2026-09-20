@@ -3,18 +3,13 @@ import Link from 'next/link'
 import {
   AiSparklesIcon,
   BookOpen01Icon,
-  Copy01Icon,
   Edit01Icon,
   Message01Icon,
-  Mic01Icon,
   MoreHorizontalIcon,
   PlusSignIcon,
-  Search01Icon,
   SentIcon,
   Settings01Icon,
   TestTube01Icon,
-  ThumbsDownIcon,
-  ThumbsUpIcon,
 } from '@hugeicons/core-free-icons'
 import type {
   AgentDefinition,
@@ -243,30 +238,50 @@ export function ChatWorkspace({
           ))
         )}
       </aside>
+      <form action={`/agents/${agent.id}`} className="conversation-picker">
+        <label>
+          Conversation
+          <select
+            defaultValue={conversation?.id ?? ''}
+            name="conversation"
+            aria-label="Choose a conversation"
+          >
+            <option value="">Choose a conversation</option>
+            {conversations.map((item, index) => (
+              <option key={item.id} value={item.id}>
+                Conversation {conversations.length - index}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button className="quiet-button" type="submit">
+          Open
+        </button>
+      </form>
       <div className="chat-canvas">
-        {!providerReady ? (
-          <p className="setup-message">
-            {agent.brain.provider} is not configured for Studio yet. Add its
-            server-side key, then restart Studio.
-          </p>
-        ) : null}
-        {!conversation ? (
-          <div className="chat-empty">
-            <Avatar name={agent.name} />
-            <h2>Ready to help</h2>
-            <p>
-              Start a conversation with {agent.name}. Teachings and
-              creator-provided knowledge are used when relevant.
+        <div className="chat-scroll-region">
+          {!providerReady ? (
+            <p className="setup-message">
+              {agent.brain.provider} is not configured for Studio yet. Add its
+              server-side key, then restart Studio.
             </p>
-            <form action={startConversationAction}>
-              <input name="agentId" type="hidden" value={agent.id} />
-              <button className="primary-button" type="submit">
-                Start conversation
-              </button>
-            </form>
-          </div>
-        ) : (
-          <>
+          ) : null}
+          {!conversation ? (
+            <div className="chat-empty">
+              <Avatar name={agent.name} />
+              <h2>Ready to help</h2>
+              <p>
+                Start a conversation with {agent.name}. Teachings and
+                creator-provided knowledge are used when relevant.
+              </p>
+              <form action={startConversationAction}>
+                <input name="agentId" type="hidden" value={agent.id} />
+                <button className="primary-button" type="submit">
+                  Start conversation
+                </button>
+              </form>
+            </div>
+          ) : (
             <div className="message-list">
               {messages.length === 0 ? (
                 <div className="chat-empty">
@@ -285,13 +300,15 @@ export function ChatWorkspace({
                 ))
               )}
             </div>
-            <Composer
-              agent={agent}
-              conversationId={conversation.id}
-              disabled={!providerReady}
-            />
-          </>
-        )}
+          )}
+        </div>
+        {conversation ? (
+          <Composer
+            agent={agent}
+            conversationId={conversation.id}
+            disabled={!providerReady}
+          />
+        ) : null}
       </div>
     </section>
   )
@@ -320,15 +337,6 @@ function MessageCard({
         <p>{message.content}</p>
         {assistant ? (
           <div className="assistant-tools">
-            <IconButton label="Copy response" disabled>
-              <Icon icon={Copy01Icon} size={15} />
-            </IconButton>
-            <IconButton label="Mark response helpful" disabled>
-              <Icon icon={ThumbsUpIcon} size={15} />
-            </IconButton>
-            <IconButton label="Mark response not helpful" disabled>
-              <Icon icon={ThumbsDownIcon} size={15} />
-            </IconButton>
             {message.teachingIds?.length ? (
               <details className="learned-context">
                 <summary>
@@ -377,24 +385,8 @@ function Composer({
         rows={3}
       />
       <div className="composer-footer">
-        <div className="composer-options">
-          <button disabled type="button">
-            <Icon icon={PlusSignIcon} />
-            Add
-          </button>
-          <button disabled type="button">
-            <Icon icon={AiSparklesIcon} />
-            Deep Think
-          </button>
-          <button disabled type="button">
-            <Icon icon={Search01Icon} />
-            Search
-          </button>
-        </div>
+        <span>Teach the agent from any response you want to improve.</span>
         <div>
-          <IconButton label="Voice input is not available yet" disabled>
-            <Icon icon={Mic01Icon} />
-          </IconButton>
           <button
             aria-label="Send message"
             className="send-button"
