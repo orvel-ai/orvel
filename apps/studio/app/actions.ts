@@ -25,6 +25,7 @@ export async function createAgentAction(formData: FormData): Promise<void> {
       name: value(formData, 'name'),
       description: value(formData, 'description'),
       instructions: value(formData, 'instructions'),
+      generalKnowledge: value(formData, 'generalKnowledge'),
       model: {
         provider: value(formData, 'provider'),
         model: value(formData, 'model'),
@@ -35,6 +36,23 @@ export async function createAgentAction(formData: FormData): Promise<void> {
   }
   revalidatePath('/')
   redirect(`/agents/${agent.id}`)
+}
+
+export async function updateGeneralKnowledgeAction(
+  formData: FormData,
+): Promise<void> {
+  const agentId = value(formData, 'agentId')
+  try {
+    await orvel.updateAgent(agentId, {
+      generalKnowledge: value(formData, 'generalKnowledge'),
+    })
+  } catch (error) {
+    withMessage(`/agents/${agentId}?tab=knowledge`, error)
+  }
+  revalidatePath(`/agents/${agentId}`)
+  redirect(
+    `/agents/${agentId}?tab=knowledge&notice=General%20Knowledge%20saved`,
+  )
 }
 
 export async function startConversationAction(

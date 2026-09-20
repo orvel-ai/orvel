@@ -17,6 +17,7 @@ export interface AgentDefinition {
   readonly name: string
   readonly description?: string
   readonly instructions: string
+  readonly generalKnowledge?: string
   readonly brain: ModelConfig
   readonly createdAt: Date
   readonly updatedAt: Date
@@ -26,7 +27,16 @@ export interface CreateAgentInput {
   readonly name: string
   readonly description?: string
   readonly instructions: string
+  readonly generalKnowledge?: string
   readonly model: ModelConfig
+}
+
+export interface UpdateAgentInput {
+  readonly name?: string
+  readonly description?: string
+  readonly instructions?: string
+  readonly generalKnowledge?: string
+  readonly model?: ModelConfig
 }
 
 export interface Conversation {
@@ -96,6 +106,7 @@ export interface RuntimeOptions {
 
 export interface AgentRepository {
   createAgent(agent: AgentDefinition): Promise<void>
+  updateAgent?(agent: AgentDefinition): Promise<void>
   getAgent(id: string): Promise<AgentDefinition | undefined>
   listAgents(): Promise<readonly AgentDefinition[]>
 }
@@ -124,12 +135,14 @@ export function createAgent(
 
   const now = options.now ?? new Date()
   const description = input.description?.trim()
+  const generalKnowledge = input.generalKnowledge?.trim()
 
   return {
     id: options.id,
     name,
     ...(description ? { description } : {}),
     instructions,
+    ...(generalKnowledge ? { generalKnowledge } : {}),
     brain: {
       provider,
       model,
@@ -137,6 +150,49 @@ export function createAgent(
     },
     createdAt: now,
     updatedAt: now,
+  }
+}
+
+export function updateAgent(
+  agent: AgentDefinition,
+  input: UpdateAgentInput,
+  options: { readonly now?: Date } = {},
+): AgentDefinition {
+  const name = input.name === undefined ? agent.name : input.name.trim()
+  const instructions =
+    input.instructions === undefined
+      ? agent.instructions
+      : input.instructions.trim()
+  const description =
+    input.description === undefined
+      ? agent.description
+      : input.description.trim()
+  const generalKnowledge =
+    input.generalKnowledge === undefined
+      ? agent.generalKnowledge
+      : input.generalKnowledge.trim()
+  const model = input.model ?? agent.brain
+  const provider = model.provider.trim()
+  const modelName = model.model.trim()
+
+  if (!name) throw new Error('An agent name is required.')
+  if (!instructions) throw new Error('Agent instructions are required.')
+  if (!provider || !modelName)
+    throw new Error('A model provider and model are required.')
+
+  return {
+    id: agent.id,
+    name,
+    ...(description ? { description } : {}),
+    instructions,
+    ...(generalKnowledge ? { generalKnowledge } : {}),
+    brain: {
+      provider,
+      model: modelName,
+      ...(model.settings ? { settings: model.settings } : {}),
+    },
+    createdAt: agent.createdAt,
+    updatedAt: options.now ?? new Date(),
   }
 }
 
@@ -163,7 +219,21 @@ export function createRuntime({ providers }: RuntimeOptions): AgentRuntime {
         )
       }
 
-      const context = input.context ?? []
+      const generalKnowledge = agent.generalKnowledge?.trim()
+      const context = [
+        ...(generalKnowledge
+          ? [
+              {
+                id: 'general-knowledge',
+                label: 'Creator-provided general knowledge',
+                content:
+                  'The following is factual reference material supplied by the agent creator. It is not a user message or a teaching example.\n\n' +
+                  generalKnowledge,
+              },
+            ]
+          : []),
+        ...(input.context ?? []),
+      ]
       const response = await provider.generate({
         model: agent.brain.model,
         instructions: agent.instructions,

@@ -45,6 +45,20 @@ export function AgentForm({ ollamaModels, ollamaError }: AgentFormProps) {
           rows={5}
         />
       </label>
+      <label>
+        General Knowledge — Recommended <span>optional</span>
+        <textarea
+          name="generalKnowledge"
+          rows={6}
+          placeholder={
+            'Delivery takes 5–7 business days.\nReturns are accepted within 14 days.\nWe deliver throughout Nigeria.'
+          }
+        />
+        <small>
+          Add information this agent should know about your business, product,
+          or topic.
+        </small>
+      </label>
       <div className="form-row">
         <label>
           Provider

@@ -8,6 +8,7 @@ import {
   saveTeachingAction,
   sendMessageAction,
   startConversationAction,
+  updateGeneralKnowledgeAction,
 } from '../../actions'
 import {
   getOllamaAvailability,
@@ -41,7 +42,9 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
   if (!agent) notFound()
 
   const tab =
-    parameters.tab === 'teachings' || parameters.tab === 'evals'
+    parameters.tab === 'teachings' ||
+    parameters.tab === 'evals' ||
+    parameters.tab === 'knowledge'
       ? parameters.tab
       : 'chat'
   const [conversations, teachings, evals, evalRuns, ollama] = await Promise.all(
@@ -94,6 +97,12 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
           href={`/agents/${agentId}?tab=teachings`}
         >
           Teachings ({teachings.length})
+        </Link>
+        <Link
+          className={tab === 'knowledge' ? 'active' : ''}
+          href={`/agents/${agentId}?tab=knowledge`}
+        >
+          General Knowledge
         </Link>
         <Link
           className={tab === 'evals' ? 'active' : ''}
@@ -318,6 +327,38 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
               </form>
             </article>
           ))}
+        </section>
+      ) : null}
+
+      {tab === 'knowledge' ? (
+        <section className="panel">
+          <form action={updateGeneralKnowledgeAction} className="form-stack">
+            <div>
+              <p className="eyebrow">Creator-provided facts</p>
+              <h2>General Knowledge</h2>
+              <p>
+                Facts this agent should know from the start. This is distinct
+                from instructions and saved teaching examples.
+              </p>
+            </div>
+            <input type="hidden" name="agentId" value={agentId} />
+            <label>
+              General Knowledge — Recommended <span>optional</span>
+              <textarea
+                name="generalKnowledge"
+                rows={10}
+                defaultValue={agent.generalKnowledge ?? ''}
+                placeholder={
+                  'Delivery takes 5–7 business days.\nReturns are accepted within 14 days.\nWe deliver throughout Nigeria.'
+                }
+              />
+              <small>
+                Add information this agent should know about your business,
+                product, or topic.
+              </small>
+            </label>
+            <button type="submit">Save General Knowledge</button>
+          </form>
         </section>
       ) : null}
 
