@@ -1247,7 +1247,8 @@ summary:focus-visible {
 }
 .directory-agent-card {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: start;
   gap: 12px;
   border: 1px solid rgba(24, 24, 22, 0.08);
   border-radius: 14px;
@@ -1287,11 +1288,17 @@ summary:focus-visible {
   font-size: 0.68rem;
 }
 .directory-agent-card > span {
-  grid-column: 2;
-  margin-top: 2px;
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center;
+  border: 1px solid rgba(24, 24, 22, 0.1);
+  border-radius: 9px;
+  padding: 7px 9px;
+  background: rgba(255, 255, 253, 0.72);
   color: #555550;
   font-size: 0.72rem;
   font-weight: 670;
+  white-space: nowrap;
 }
 .agent-form {
   position: sticky;

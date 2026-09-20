@@ -51,7 +51,9 @@ export default async function AgentsPage() {
             <div>
               <p className="kicker">All agents</p>
               <h2>
-                {agents.length ? `${agents.length} agents` : 'No agents yet'}
+                {agents.length
+                  ? `${agents.length} ${agents.length === 1 ? 'agent' : 'agents'}`
+                  : 'No agents yet'}
               </h2>
             </div>
           </div>
