@@ -1,6 +1,10 @@
 import Link from 'next/link'
 
+import { PlusSignIcon, Search01Icon } from '@hugeicons/core-free-icons'
+
 import { AgentForm } from './agent-form'
+import { StudioShell } from './components/studio-shell'
+import { Avatar, Icon } from './components/ui'
 import { getOllamaAvailability, orvel } from './lib/orvel'
 
 type PageProps = { searchParams: Promise<{ error?: string }> }
@@ -11,62 +15,81 @@ export default async function Home({ searchParams }: PageProps) {
     searchParams,
     getOllamaAvailability(),
   ])
-
   return (
-    <main className="studio-shell">
-      <header className="masthead">
-        <Link className="wordmark" href="/" aria-label="Orvel Studio home">
-          Orvel
-        </Link>
-        <span className="status">v0.1 · Teach</span>
-      </header>
-
-      <section className="page-intro">
-        <p className="eyebrow">Agents</p>
-        <h1>Teach an agent through examples and corrections.</h1>
-        <p>
-          Create an agent, chat with it, save a correction, then let Orvel
-          retrieve relevant teaching for future responses.
-        </p>
-      </section>
-
-      {parameters.error ? (
-        <p className="alert" role="alert">
-          {parameters.error}
-        </p>
-      ) : null}
-
-      <section className="two-column" aria-label="Agent setup">
-        <div>
-          <h2>Your agents</h2>
-          {agents.length === 0 ? (
-            <p className="empty-state">
-              No agents yet. Create SupportBot to try the teaching loop.
-            </p>
-          ) : (
-            <div className="agent-list">
-              {agents.map((agent) => (
-                <Link
-                  className="agent-card"
-                  href={`/agents/${agent.id}`}
-                  key={agent.id}
-                >
-                  <span>{agent.name}</span>
-                  <small>
-                    {agent.brain.provider} · {agent.brain.model}
-                  </small>
-                  <p>{agent.description ?? agent.instructions}</p>
-                </Link>
-              ))}
-            </div>
-          )}
+    <StudioShell agents={agents}>
+      <main className="home-workspace">
+        <div className="workspace-topbar">
+          <div className="topbar-search">
+            <Icon icon={Search01Icon} size={16} />
+            <span>Search anything…</span>
+            <kbd>⌘ K</kbd>
+          </div>
         </div>
-
-        <AgentForm
-          ollamaModels={ollama.available ? ollama.models : []}
-          {...(!ollama.available ? { ollamaError: ollama.error } : {})}
-        />
-      </section>
-    </main>
+        <section className="home-hero">
+          <div>
+            <p className="kicker">Your workspace</p>
+            <h1>Build agents that get better with you.</h1>
+            <p>
+              Start with the essentials, then refine responses as your agents
+              work.
+            </p>
+          </div>
+          <a className="primary-button" href="#new-agent">
+            <Icon icon={PlusSignIcon} size={16} />
+            Create agent
+          </a>
+        </section>
+        {parameters.error ? (
+          <p className="alert" role="alert">
+            {parameters.error}
+          </p>
+        ) : null}
+        <section className="agent-home-grid">
+          <div className="home-agents">
+            <div className="section-heading-row">
+              <div>
+                <p className="kicker">Your agents</p>
+                <h2>Agent workspace</h2>
+              </div>
+              <span>{agents.length} total</span>
+            </div>
+            {agents.length === 0 ? (
+              <div className="empty-state polished">
+                <p>
+                  No agents yet. Create one to start a conversation, save
+                  teachings, and run evaluations.
+                </p>
+              </div>
+            ) : (
+              <div className="home-agent-list">
+                {agents.map((agent) => (
+                  <Link
+                    className="home-agent-card"
+                    href={`/agents/${agent.id}`}
+                    key={agent.id}
+                  >
+                    <Avatar name={agent.name} />
+                    <div>
+                      <h3>{agent.name}</h3>
+                      <p>{agent.description ?? agent.instructions}</p>
+                      <small>
+                        {agent.brain.provider} · {agent.brain.model}
+                      </small>
+                    </div>
+                    <span>Open</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+          <div id="new-agent">
+            <AgentForm
+              ollamaModels={ollama.available ? ollama.models : []}
+              {...(!ollama.available ? { ollamaError: ollama.error } : {})}
+            />
+          </div>
+        </section>
+      </main>
+    </StudioShell>
   )
 }
