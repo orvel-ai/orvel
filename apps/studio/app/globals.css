@@ -58,20 +58,24 @@ summary:focus-visible {
 .app-shell {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
+  gap: 12px;
   min-height: 100vh;
+  padding: 12px;
 }
 .app-sidebar {
   position: sticky;
-  top: 0;
+  top: 12px;
   display: flex;
-  height: 100vh;
+  height: calc(100vh - 24px);
   flex-direction: column;
   gap: 18px;
   overflow: hidden;
-  border-right: 1px solid rgba(24, 24, 22, 0.08);
+  border: 1px solid rgba(24, 24, 22, 0.09);
+  border-radius: 22px;
   padding: 20px 14px 14px;
-  background: rgba(250, 250, 248, 0.74);
-  backdrop-filter: blur(22px);
+  background: rgba(255, 255, 253, 0.82);
+  box-shadow: 0 14px 40px rgba(28, 28, 22, 0.06);
+  backdrop-filter: blur(24px);
 }
 .brand {
   display: inline-flex;
@@ -1159,9 +1163,14 @@ summary:focus-visible {
 @media (max-width: 860px) {
   .app-shell {
     grid-template-columns: 72px minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px;
   }
   .app-sidebar {
+    top: 8px;
+    height: calc(100vh - 16px);
     align-items: center;
+    border-radius: 18px;
     padding: 20px 10px 12px;
   }
   .brand {
@@ -1220,6 +1229,7 @@ summary:focus-visible {
 @media (max-width: 650px) {
   .app-shell {
     display: block;
+    padding: 0;
   }
   .app-sidebar {
     position: static;
