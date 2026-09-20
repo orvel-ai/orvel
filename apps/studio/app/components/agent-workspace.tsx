@@ -52,7 +52,7 @@ export function AgentHeader({
   return (
     <header className="agent-identity">
       <div className="breadcrumb">
-        <Link href="/">Agents</Link>
+        <Link href="/agents">Agents</Link>
         <span>/</span>
         <strong>{agent.name}</strong>
       </div>

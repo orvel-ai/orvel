@@ -2,12 +2,16 @@ import Link from 'next/link'
 
 import { PlusSignIcon, Search01Icon } from '@hugeicons/core-free-icons'
 
+import { AgentForm } from '../agent-form'
 import { StudioShell } from '../components/studio-shell'
 import { Avatar, Icon } from '../components/ui'
-import { orvel } from '../lib/orvel'
+import { getOllamaAvailability, orvel } from '../lib/orvel'
 
 export default async function AgentsPage() {
-  const agents = await orvel.listAgents()
+  const [agents, ollama] = await Promise.all([
+    orvel.listAgents(),
+    getOllamaAvailability(),
+  ])
   const activity = await Promise.all(
     agents.map(async (agent) => {
       const [conversations, teachings] = await Promise.all([
@@ -41,10 +45,10 @@ export default async function AgentsPage() {
               evaluations.
             </p>
           </div>
-          <Link className="primary-button" href="/#new-agent">
+          <a className="primary-button" href="#new-agent">
             <Icon icon={PlusSignIcon} size={16} />
             Create agent
-          </Link>
+          </a>
         </section>
         <section className="agents-directory-panel">
           <div className="section-heading-row">
@@ -59,9 +63,7 @@ export default async function AgentsPage() {
           </div>
           {agents.length === 0 ? (
             <div className="empty-state polished">
-              <p>
-                Create your first agent from the Home overview to get started.
-              </p>
+              <p>Create your first agent below to get started.</p>
             </div>
           ) : (
             <div className="agents-directory-grid">
@@ -85,6 +87,19 @@ export default async function AgentsPage() {
               ))}
             </div>
           )}
+        </section>
+        <section className="create-agent-section" id="new-agent">
+          <div className="section-heading-row">
+            <div>
+              <p className="kicker">New agent</p>
+              <h2>Create an agent</h2>
+            </div>
+            <span>Set up in a few steps</span>
+          </div>
+          <AgentForm
+            ollamaModels={ollama.available ? ollama.models : []}
+            {...(!ollama.available ? { ollamaError: ollama.error } : {})}
+          />
         </section>
       </main>
     </StudioShell>

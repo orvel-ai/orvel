@@ -1,199 +1,217 @@
+import Image from 'next/image'
 import Link from 'next/link'
 
 import {
-  Activity01Icon,
   AiSparklesIcon,
-  Chart02Icon,
+  ArrowRight01Icon,
+  BookOpen01Icon,
+  CheckmarkCircle02Icon,
   Message01Icon,
-  PlusSignIcon,
-  Search01Icon,
+  Rocket01Icon,
+  TestTube01Icon,
 } from '@hugeicons/core-free-icons'
 
-import { AgentForm } from './agent-form'
-import { StudioShell } from './components/studio-shell'
-import { Avatar, Icon } from './components/ui'
-import { getOllamaAvailability, orvel } from './lib/orvel'
+import { Icon } from './components/ui'
 
-type PageProps = { searchParams: Promise<{ error?: string }> }
+const featuredAgents = [
+  {
+    name: 'Customer Support Guide',
+    description:
+      'A thoughtful first responder for product questions and common requests.',
+    category: 'Support',
+    color: 'blue',
+    icon: Message01Icon,
+  },
+  {
+    name: 'Study Companion',
+    description:
+      'Break down unfamiliar topics, make a plan, and keep learning moving.',
+    category: 'Education',
+    color: 'green',
+    icon: BookOpen01Icon,
+  },
+  {
+    name: 'Product Researcher',
+    description:
+      'Turn rough ideas into structured questions, summaries, and next steps.',
+    category: 'Product',
+    color: 'orange',
+    icon: AiSparklesIcon,
+  },
+] as const
 
-export default async function Home({ searchParams }: PageProps) {
-  const [agents, parameters, ollama] = await Promise.all([
-    orvel.listAgents(),
-    searchParams,
-    getOllamaAvailability(),
-  ])
-  const agentActivity = await Promise.all(
-    agents.map(async (agent) => {
-      const [conversations, teachings, evalRuns] = await Promise.all([
-        orvel.listConversations(agent.id),
-        orvel.listTeachings(agent.id),
-        orvel.listEvalRuns(agent.id),
-      ])
-      return { agent, conversations, teachings, evalRuns }
-    }),
-  )
-  const conversations = agentActivity.flatMap((item) => item.conversations)
-  const teachings = agentActivity.flatMap((item) => item.teachings)
-  const evalRuns = agentActivity.flatMap((item) => item.evalRuns)
-  const passedEvals = evalRuns.filter((run) => run.result.passed).length
-  const evaluationRate = evalRuns.length
-    ? `${Math.round((passedEvals / evalRuns.length) * 100)}%`
-    : '—'
-  const recentAgents = [...agentActivity]
-    .sort(
-      (left, right) =>
-        right.agent.updatedAt.getTime() - left.agent.updatedAt.getTime(),
-    )
-    .slice(0, 4)
-
+export default function Home() {
   return (
-    <StudioShell agents={agents} currentSection="home">
-      <main className="home-workspace">
-        <div className="workspace-topbar">
-          <div className="topbar-search">
-            <Icon icon={Search01Icon} size={16} />
-            <span>Search anything…</span>
-            <kbd>⌘ K</kbd>
+    <main className="public-home">
+      <header className="public-nav">
+        <Link className="public-brand" href="/">
+          <Image
+            alt="Orvel"
+            className="public-brand-mark"
+            height={36}
+            priority
+            src="/orvel-mark.png"
+            width={36}
+          />
+          <span>Orvel</span>
+        </Link>
+        <nav aria-label="Public navigation">
+          <a href="#how-it-works">How it works</a>
+          <a href="#featured-agents">Agent examples</a>
+        </nav>
+        <Link className="public-nav-cta" href="/agents">
+          Open Studio <Icon icon={ArrowRight01Icon} size={15} />
+        </Link>
+      </header>
+
+      <section className="public-hero">
+        <div className="public-hero-copy">
+          <p className="public-eyebrow">
+            <span /> AI agents that learn with you
+          </p>
+          <h1>Build an agent people can count on.</h1>
+          <p className="public-hero-description">
+            Orvel helps you turn your expertise into helpful AI agents. Give
+            them clear instructions, useful knowledge, and corrections that make
+            every conversation better.
+          </p>
+          <div className="public-hero-actions">
+            <Link className="public-primary-button" href="/agents#new-agent">
+              Create an agent <Icon icon={ArrowRight01Icon} size={17} />
+            </Link>
+            <a className="public-text-button" href="#featured-agents">
+              See agent examples
+            </a>
+          </div>
+          <div className="public-trust-row">
+            <span>
+              <Icon icon={CheckmarkCircle02Icon} size={16} /> Bring your own
+              model
+            </span>
+            <span>
+              <Icon icon={CheckmarkCircle02Icon} size={16} /> Start locally
+            </span>
           </div>
         </div>
-        <section className="home-hero">
-          <div>
-            <p className="kicker">Workspace overview</p>
-            <h1>Everything your agents are learning.</h1>
-            <p>
-              Keep an eye on your agent fleet, its conversations, and the
-              feedback that makes each response sharper.
-            </p>
-          </div>
-          <a className="primary-button" href="#new-agent">
-            <Icon icon={PlusSignIcon} size={16} />
-            Create agent
-          </a>
-        </section>
-        {parameters.error ? (
-          <p className="alert" role="alert">
-            {parameters.error}
-          </p>
-        ) : null}
-        <section aria-label="Workspace statistics" className="overview-stats">
-          <article className="overview-stat-card">
-            <span className="overview-stat-icon blue">
-              <Icon icon={AiSparklesIcon} size={18} />
-            </span>
-            <div>
-              <span>Active agents</span>
-              <strong>{agents.length}</strong>
-            </div>
-          </article>
-          <article className="overview-stat-card">
-            <span className="overview-stat-icon violet">
-              <Icon icon={Message01Icon} size={18} />
-            </span>
-            <div>
-              <span>Conversations</span>
-              <strong>{conversations.length}</strong>
-            </div>
-          </article>
-          <article className="overview-stat-card">
-            <span className="overview-stat-icon gold">
-              <Icon icon={Activity01Icon} size={18} />
-            </span>
-            <div>
-              <span>Teachings saved</span>
-              <strong>{teachings.length}</strong>
-            </div>
-          </article>
-          <article className="overview-stat-card">
-            <span className="overview-stat-icon green">
-              <Icon icon={Chart02Icon} size={18} />
-            </span>
-            <div>
-              <span>Evaluation pass rate</span>
-              <strong>{evaluationRate}</strong>
-            </div>
-          </article>
-        </section>
-        <section className="overview-grid">
-          <div className="overview-panel agent-overview-panel">
-            <div className="section-heading-row">
-              <div>
-                <p className="kicker">Agent fleet</p>
-                <h2>Recently active agents</h2>
-              </div>
-              <span>{agents.length} total</span>
-            </div>
-            {agents.length === 0 ? (
-              <div className="empty-state polished">
-                <p>
-                  No agents yet. Create one to start a conversation, save
-                  teachings, and run evaluations.
-                </p>
-              </div>
-            ) : (
-              <div className="home-agent-list">
-                {recentAgents.map(({ agent, conversations, teachings }) => (
-                  <Link
-                    className="home-agent-card"
-                    href={`/agents/${agent.id}`}
-                    key={agent.id}
-                  >
-                    <Avatar name={agent.name} />
-                    <div>
-                      <h3>{agent.name}</h3>
-                      <p>{agent.description ?? agent.instructions}</p>
-                      <small>
-                        {conversations.length} conversations ·{' '}
-                        {teachings.length} teachings
-                      </small>
-                    </div>
-                    <span>Open</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-          <aside className="overview-panel overview-guide">
-            <p className="kicker">How it works</p>
-            <h2>A better answer loop</h2>
-            <ol>
-              <li>
-                <span>1</span>
-                <p>
-                  <strong>Start a conversation</strong>
-                  Test how your agent handles real questions.
-                </p>
-              </li>
-              <li>
-                <span>2</span>
-                <p>
-                  <strong>Save a teaching</strong>
-                  Turn a correction into lasting context.
-                </p>
-              </li>
-              <li>
-                <span>3</span>
-                <p>
-                  <strong>Run evaluations</strong>
-                  Check that the right behavior holds up.
-                </p>
-              </li>
-            </ol>
-          </aside>
-        </section>
-        <section className="create-agent-section" id="new-agent">
-          <div className="section-heading-row">
-            <div>
-              <p className="kicker">New agent</p>
-              <h2>Create an agent</h2>
-            </div>
-            <span>Set up in a few steps</span>
-          </div>
-          <AgentForm
-            ollamaModels={ollama.available ? ollama.models : []}
-            {...(!ollama.available ? { ollamaError: ollama.error } : {})}
+        <div aria-hidden="true" className="public-hero-visual">
+          <div className="hero-orbit orbit-one" />
+          <div className="hero-orbit orbit-two" />
+          <Image
+            alt=""
+            className="hero-mark"
+            height={440}
+            src="/orvel-mark.png"
+            width={440}
           />
-        </section>
-      </main>
-    </StudioShell>
+          <div className="hero-message-card hero-message-top">
+            <span className="mini-avatar blue">A</span>
+            <p>Can you help me get started?</p>
+          </div>
+          <div className="hero-message-card hero-message-bottom">
+            <span className="mini-avatar green">O</span>
+            <p>Absolutely. Here’s a clear first step.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="public-feature-strip">
+        <p>Make AI agents more useful, one correction at a time.</p>
+        <div>
+          <span>Instructions</span>
+          <i />
+          <span>Knowledge</span>
+          <i />
+          <span>Teachings</span>
+        </div>
+      </section>
+
+      <section className="public-section" id="how-it-works">
+        <div className="public-section-heading">
+          <p className="public-eyebrow">Simple by design</p>
+          <h2>From your expertise to a better conversation.</h2>
+        </div>
+        <div className="public-steps">
+          <article>
+            <span>01</span>
+            <Icon icon={Rocket01Icon} size={22} />
+            <h3>Set the foundation</h3>
+            <p>
+              Define how your agent should behave and the facts it needs from
+              day one.
+            </p>
+          </article>
+          <article>
+            <span>02</span>
+            <Icon icon={Message01Icon} size={22} />
+            <h3>Use it in real life</h3>
+            <p>
+              Start conversations and see exactly how your agent responds to
+              real questions.
+            </p>
+          </article>
+          <article>
+            <span>03</span>
+            <Icon icon={TestTube01Icon} size={22} />
+            <h3>Make it sharper</h3>
+            <p>
+              Save corrections as teachings, then evaluate the behavior you care
+              about.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section
+        className="public-section public-agent-section"
+        id="featured-agents"
+      >
+        <div className="public-section-heading with-link">
+          <div>
+            <p className="public-eyebrow">Agent examples</p>
+            <h2>Start with a familiar role.</h2>
+          </div>
+          <span>Public discovery is coming soon</span>
+        </div>
+        <div className="public-agent-grid">
+          {featuredAgents.map((agent) => (
+            <article
+              className={`public-agent-card ${agent.color}`}
+              key={agent.name}
+            >
+              <div className="public-agent-card-top">
+                <span className="public-agent-icon">
+                  <Icon icon={agent.icon} size={20} />
+                </span>
+                <small>{agent.category}</small>
+              </div>
+              <h3>{agent.name}</h3>
+              <p>{agent.description}</p>
+              <Link href="/agents#new-agent">
+                Use this as inspiration{' '}
+                <Icon icon={ArrowRight01Icon} size={15} />
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="public-final-cta">
+        <Image alt="" height={76} src="/orvel-mark.png" width={76} />
+        <p className="public-eyebrow">Make your expertise useful</p>
+        <h2>Start building with Orvel.</h2>
+        <Link className="public-primary-button" href="/agents#new-agent">
+          Create your first agent <Icon icon={ArrowRight01Icon} size={17} />
+        </Link>
+      </section>
+
+      <footer className="public-footer">
+        <Link className="public-brand" href="/">
+          <Image alt="Orvel" height={24} src="/orvel-mark.png" width={24} />
+          <span>Orvel</span>
+        </Link>
+        <p>AI agents that get better with you.</p>
+        <Link href="/agents">Open Studio</Link>
+      </footer>
+    </main>
   )
 }
