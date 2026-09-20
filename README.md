@@ -61,9 +61,9 @@ v0.1 proves the idea of teaching an agent without changing model weights:
 5. Matching teachings are formatted as explicit creator-supplied context and
    passed to the configured provider.
 
-Studio supports Agents, Chat, Teachings, and Evals. Use hosted models through
-OpenAI or run a local model through Ollama. Provider calls remain server-side;
-no API key is sent to the browser.
+Studio supports Agents, Chat, Teachings, and Evals. Run models locally through
+Ollama or use hosted inference through Groq or OpenAI. Provider calls remain
+server-side; no API key is sent to the browser.
 
 See [docs/v0.1-teaching.md](docs/v0.1-teaching.md) for the exact behavior and
 limitations.
@@ -109,6 +109,21 @@ Ollama runs the underlying language model locally. Orvel provides the agent
 runtime, teaching, memory/knowledge architecture, evaluation, and surrounding
 agent behavior. v0.1 teachings are retrieved contextual corrections; they do
 not modify a local model's weights.
+
+### Run in the cloud with Groq or OpenAI
+
+For fast hosted Groq inference, add `GROQ_API_KEY` to
+`apps/studio/.env.local`, then select **Groq (Cloud)** in Studio. The editable
+default is `openai/gpt-oss-20b`, an active Groq model when this documentation
+was updated. Groq controls model availability and free-tier limits, which may
+change.
+
+For OpenAI-backed agents, set `OPENAI_API_KEY` and select **OpenAI (Cloud)**.
+OpenAI usage may incur charges depending on your account. Either cloud key is
+independent: a Groq-only setup does not need an OpenAI key.
+
+Groq and OpenAI provide model inference. Orvel still provides the agent runtime,
+teaching retrieval, persistence, evals, and surrounding agent behavior.
 
 ### Checks
 

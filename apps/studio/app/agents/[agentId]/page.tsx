@@ -146,9 +146,19 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
           <div className="chat-panel">
             {!isProviderConfigured(agent.brain.provider) ? (
               <p className="setup-message">
-                OpenAI is not configured. Add <code>OPENAI_API_KEY</code> to{' '}
-                <code>.env.local</code> and restart Studio before sending a
-                message.
+                {agent.brain.provider === 'groq' ? (
+                  <>
+                    Groq is not configured. Add <code>GROQ_API_KEY</code> to{' '}
+                    <code>.env.local</code> and restart Studio before sending a
+                    message.
+                  </>
+                ) : (
+                  <>
+                    OpenAI is not configured. Add <code>OPENAI_API_KEY</code> to{' '}
+                    <code>.env.local</code> and restart Studio before sending a
+                    message.
+                  </>
+                )}
               </p>
             ) : null}
             {agent.brain.provider === 'ollama' &&

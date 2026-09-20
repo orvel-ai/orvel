@@ -12,9 +12,12 @@ type AgentFormProps = {
 export function AgentForm({ ollamaModels, ollamaError }: AgentFormProps) {
   const [provider, setProvider] = useState('ollama')
   const isOllama = provider === 'ollama'
+  const isGroq = provider === 'groq'
   const defaultModel = isOllama
     ? (ollamaModels[0] ?? 'llama3.2:3b')
-    : 'gpt-4.1-mini'
+    : isGroq
+      ? 'openai/gpt-oss-20b'
+      : 'gpt-4.1-mini'
 
   return (
     <form action={createAgentAction} className="panel form-stack">
@@ -51,6 +54,7 @@ export function AgentForm({ ollamaModels, ollamaError }: AgentFormProps) {
             onChange={(event) => setProvider(event.target.value)}
           >
             <option value="ollama">Ollama (Local)</option>
+            <option value="groq">Groq (Cloud)</option>
             <option value="openai">OpenAI</option>
           </select>
         </label>
@@ -61,7 +65,13 @@ export function AgentForm({ ollamaModels, ollamaError }: AgentFormProps) {
             name="model"
             defaultValue={defaultModel}
             list={isOllama && ollamaModels.length ? 'ollama-models' : undefined}
-            placeholder={isOllama ? 'e.g. llama3.2:3b' : 'gpt-4.1-mini'}
+            placeholder={
+              isOllama
+                ? 'e.g. llama3.2:3b'
+                : isGroq
+                  ? 'openai/gpt-oss-20b'
+                  : 'gpt-4.1-mini'
+            }
             required
           />
           {isOllama && ollamaModels.length ? (
@@ -77,6 +87,12 @@ export function AgentForm({ ollamaModels, ollamaError }: AgentFormProps) {
         <p className="provider-note">
           Ollama runs locally and needs to be installed and running.
           {ollamaError ? ` ${ollamaError}` : ' No API key is needed.'}
+        </p>
+      ) : isGroq ? (
+        <p className="provider-note">
+          Groq calls require <code>GROQ_API_KEY</code> in Studio&apos;s
+          server-side <code>.env.local</code>. Model availability and limits are
+          managed by Groq.
         </p>
       ) : (
         <p className="provider-note">

@@ -196,6 +196,9 @@ importers:
 
   apps/studio:
     dependencies:
+      '@orvel/groq':
+        specifier: workspace:*
+        version: link:../../packages/groq
       '@orvel/local':
         specifier: workspace:*
         version: link:../../packages/local
@@ -235,6 +238,12 @@ importers:
         version: link:../../sdk
 
   packages/evals: {}
+
+  packages/groq:
+    dependencies:
+      '@orvel/runtime':
+        specifier: workspace:*
+        version: link:../runtime
 
   packages/knowledge: {}
 
