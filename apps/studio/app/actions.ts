@@ -32,7 +32,7 @@ export async function createAgentAction(formData: FormData): Promise<void> {
       },
     })
   } catch (error) {
-    withMessage('/', error)
+    withMessage('/agents/new', error)
   }
   revalidatePath('/')
   redirect(`/agents/${agent.id}`)
@@ -55,6 +55,26 @@ export async function updateGeneralKnowledgeAction(
   )
 }
 
+export async function updateAgentAction(formData: FormData): Promise<void> {
+  const agentId = value(formData, 'agentId')
+  try {
+    await orvel.updateAgent(agentId, {
+      name: value(formData, 'name'),
+      description: value(formData, 'description'),
+      instructions: value(formData, 'instructions'),
+      model: {
+        provider: value(formData, 'provider'),
+        model: value(formData, 'model'),
+      },
+    })
+  } catch (error) {
+    withMessage(`/agents/${agentId}?tab=settings`, error)
+  }
+  revalidatePath(`/agents/${agentId}`)
+  revalidatePath('/')
+  redirect(`/agents/${agentId}?tab=settings&notice=Agent%20settings%20saved`)
+}
+
 export async function startConversationAction(
   formData: FormData,
 ): Promise<void> {
@@ -67,6 +87,21 @@ export async function startConversationAction(
   }
   revalidatePath(`/agents/${agentId}`)
   redirect(`/agents/${agentId}?conversation=${conversation.id}`)
+}
+
+export async function renameConversationAction(
+  formData: FormData,
+): Promise<void> {
+  const agentId = value(formData, 'agentId')
+  const conversationId = value(formData, 'conversationId')
+  const destination = `/agents/${agentId}?conversation=${conversationId}`
+  try {
+    await orvel.renameConversation(conversationId, value(formData, 'title'))
+  } catch (error) {
+    withMessage(destination, error)
+  }
+  revalidatePath(`/agents/${agentId}`)
+  redirect(destination)
 }
 
 export async function sendMessageAction(formData: FormData): Promise<void> {

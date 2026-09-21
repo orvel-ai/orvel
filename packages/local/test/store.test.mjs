@@ -25,6 +25,7 @@ test('persists agents, conversations, messages, and teachings across store insta
     await store.createConversation({
       id: 'conversation-1',
       agentId: 'agent-1',
+      title: 'Refund question',
       createdAt: timestamp,
       updatedAt: timestamp,
     })
@@ -67,6 +68,19 @@ test('persists agents, conversations, messages, and teachings across store insta
     assert.equal(
       (await reopenedStore.listMessages('conversation-1'))[0].content,
       'Refund?',
+    )
+    assert.equal(
+      (await reopenedStore.getConversation('conversation-1')).title,
+      'Refund question',
+    )
+    await reopenedStore.updateConversation({
+      ...(await reopenedStore.getConversation('conversation-1')),
+      title: 'Refund follow-up',
+      updatedAt: new Date('2026-01-02T00:00:00.000Z'),
+    })
+    assert.equal(
+      (await new FileStore(dataPath).getConversation('conversation-1')).title,
+      'Refund follow-up',
     )
     assert.equal(
       (await reopenedStore.listTeachings('agent-1'))[0].correctedResponse,

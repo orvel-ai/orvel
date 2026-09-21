@@ -44,6 +44,7 @@ export interface UpdateAgentInput {
 export interface Conversation {
   readonly id: string
   readonly agentId: string
+  readonly title?: string
   readonly createdAt: Date
   readonly updatedAt: Date
 }
@@ -115,6 +116,7 @@ export interface AgentRepository {
 
 export interface ConversationRepository {
   createConversation(conversation: Conversation): Promise<void>
+  updateConversation?(conversation: Conversation): Promise<void>
   getConversation(id: string): Promise<Conversation | undefined>
   listConversations(agentId: string): Promise<readonly Conversation[]>
   appendMessage(message: ConversationMessage): Promise<void>

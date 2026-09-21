@@ -180,6 +180,17 @@ export class FileStore
     }))
   }
 
+  async updateConversation(conversation: Conversation): Promise<void> {
+    await this.mutate((data) => ({
+      ...data,
+      conversations: data.conversations.map((candidate) =>
+        candidate.id === conversation.id
+          ? asConversation(conversation)
+          : candidate,
+      ),
+    }))
+  }
+
   async getConversation(id: string): Promise<Conversation | undefined> {
     const data = await this.read()
     const conversation = data.conversations.find(
