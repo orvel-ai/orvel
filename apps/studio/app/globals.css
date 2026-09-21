@@ -2001,6 +2001,355 @@ summary:focus-visible {
     transform: translateX(0);
   }
 }
+
+/* Studio refinement: quieter surfaces, deliberate controls, and tool-first workspaces. */
+body {
+  background: #f8f8f6;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 2px solid rgba(46, 140, 255, 0.72);
+  outline-offset: 2px;
+}
+
+.app-shell {
+  gap: 10px;
+  padding: 10px;
+}
+
+.app-sidebar {
+  top: 10px;
+  height: calc(100vh - 20px);
+  gap: 15px;
+  border-color: rgba(24, 24, 22, 0.09);
+  border-radius: 16px;
+  padding: 16px 12px 12px;
+  background: #fcfcfa;
+  box-shadow: 0 10px 28px rgba(28, 28, 22, 0.045);
+  backdrop-filter: none;
+}
+
+.brand {
+  padding: 4px 6px 10px;
+  font-size: 1.06rem;
+}
+
+.brand-mark {
+  filter: none;
+}
+
+.command-field,
+.topbar-search {
+  min-height: 34px;
+  border-color: rgba(24, 24, 22, 0.13);
+  border-radius: 7px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.sidebar-nav {
+  gap: 1px;
+}
+
+.sidebar-item {
+  gap: 9px;
+  border-radius: 6px;
+  padding: 7px 8px;
+  font-size: 0.8rem;
+}
+
+.sidebar-item.active {
+  background: #ecece8;
+  box-shadow: inset 2px 0 0 #252523;
+}
+
+.agent-row {
+  border-radius: 6px;
+  padding: 6px;
+}
+
+.agent-row:hover,
+.agent-row.selected {
+  background: #f0f0ec;
+}
+
+.avatar {
+  border-color: rgba(24, 24, 22, 0.1);
+  border-radius: 8px;
+  background: #ecefeb;
+  color: #3f6967;
+}
+
+.avatar.compact {
+  border-radius: 6px;
+}
+
+.badge {
+  border: 0;
+  border-radius: 4px;
+  padding: 3px 6px;
+  background: #ecece8;
+}
+
+.badge.active {
+  background: #e7f1e8;
+}
+
+.workspace-tabs {
+  gap: 0;
+  margin-top: 19px;
+}
+
+.workspace-tabs a {
+  padding: 10px 9px 9px;
+}
+
+.workspace-body {
+  gap: 20px;
+  padding-top: 18px;
+}
+
+.inspector {
+  gap: 10px;
+}
+
+.inspector-card,
+.settings-card,
+.chat-workspace {
+  border-color: rgba(24, 24, 22, 0.1);
+  border-radius: 9px;
+  background: #fcfcfa;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.inspector-card {
+  padding: 14px;
+}
+
+.content-panel {
+  border: 0;
+  border-radius: 0;
+  padding: 8px 2px;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.quick-actions a {
+  border-radius: 5px;
+  padding: 7px;
+}
+
+.chat-workspace {
+  height: clamp(530px, calc(100vh - 300px), 700px);
+}
+
+.thread-list {
+  gap: 2px;
+  padding: 10px;
+  background: #f5f5f2;
+}
+
+.new-thread,
+.quiet-button {
+  min-height: 32px;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: transparent;
+  font-size: 0.73rem;
+}
+
+.new-thread:hover,
+.quiet-button:hover {
+  border-color: rgba(24, 24, 22, 0.24);
+  background: #fff;
+}
+
+.thread {
+  border-radius: 5px;
+  padding: 7px;
+}
+
+.chat-titlebar form {
+  padding: 8px 13px;
+}
+
+.message-list {
+  gap: 20px;
+  padding: 27px clamp(18px, 4vw, 43px);
+}
+
+.chat-message.user .message-body {
+  border-radius: 8px 8px 2px 8px;
+  background: #efefec;
+}
+
+.premium-composer {
+  margin: 0 14px 14px;
+  border-radius: 8px;
+  padding: 9px;
+  background: #fff;
+  box-shadow: none;
+}
+
+.icon-button,
+.message-teach,
+.learned-context summary,
+.composer-options button {
+  border-radius: 5px;
+}
+
+.send-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #252523;
+}
+
+.primary-button {
+  min-height: 34px;
+  border-radius: 6px;
+  padding: 7px 11px;
+  background: #252523;
+  box-shadow: none;
+}
+
+.primary-button:hover,
+.send-button:hover:not(:disabled) {
+  background: #11110f;
+}
+
+.section-intro h2 {
+  font-size: clamp(1.25rem, 2.2vw, 1.65rem);
+}
+
+.polished {
+  gap: 7px;
+  border-width: 1px 0;
+  border-style: solid;
+  border-color: rgba(24, 24, 22, 0.1);
+  border-radius: 0;
+  padding: 22px 0;
+}
+
+.teaching-list,
+.evaluation-list {
+  gap: 0;
+  border-top: 1px solid rgba(24, 24, 22, 0.1);
+}
+
+.teaching-card,
+.evaluation-card {
+  gap: 11px;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  padding: 17px 0;
+  background: transparent;
+}
+
+.text-button:hover {
+  color: #753c37;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.knowledge-guide {
+  gap: 0;
+  margin: 22px 0;
+}
+
+.knowledge-guide div {
+  border: 0;
+  border-left: 1px solid rgba(24, 24, 22, 0.12);
+  border-radius: 0;
+  padding: 2px 12px;
+  background: transparent;
+}
+
+.knowledge-guide div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.knowledge-guide .featured {
+  border-color: rgba(46, 140, 255, 0.5);
+  background: transparent;
+}
+
+.settings-card {
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.field-label input,
+.field-label textarea,
+.field-label select {
+  min-height: 36px;
+  border-color: rgba(24, 24, 22, 0.16);
+  border-radius: 6px;
+  padding: 8px 9px;
+  background: #fff;
+}
+
+.field-label textarea {
+  min-height: 96px;
+}
+
+.field-label input:focus,
+.field-label textarea:focus,
+.field-label select:focus,
+.agent-form input:focus,
+.agent-form textarea:focus,
+.agent-form select:focus {
+  border-color: rgba(46, 140, 255, 0.75);
+  box-shadow: 0 0 0 2px rgba(46, 140, 255, 0.12);
+}
+
+.agents-directory-panel {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.agents-directory-grid {
+  gap: 0 22px;
+  margin-top: 8px;
+}
+
+.directory-agent-card {
+  gap: 11px;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  padding: 15px 4px;
+  background: transparent;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.directory-agent-card:hover {
+  transform: none;
+  border-color: rgba(24, 24, 22, 0.25);
+  background: rgba(24, 24, 22, 0.018);
+  box-shadow: none;
+}
+
+.directory-agent-card > span {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  color: #5a5a55;
+}
 @media (max-width: 1180px) {
   .workspace-body {
     grid-template-columns: 1fr;
@@ -2232,14 +2581,16 @@ summary:focus-visible {
 .agent-form textarea,
 .agent-form select {
   width: 100%;
+  min-height: 36px;
   border: 1px solid rgba(24, 24, 22, 0.13);
-  border-radius: 9px;
-  padding: 10px;
+  border-radius: 6px;
+  padding: 8px 9px;
   outline: 0;
-  background: rgba(255, 255, 255, 0.82);
+  background: #fff;
   color: #333330;
 }
 .agent-form textarea {
+  min-height: 96px;
   resize: vertical;
   line-height: 1.5;
 }
