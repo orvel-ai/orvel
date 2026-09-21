@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { PlusSignIcon, Search01Icon } from '@hugeicons/core-free-icons'
+import { PlusSignIcon } from '@hugeicons/core-free-icons'
 
 import { StudioShell } from '../components/studio-shell'
 import { Avatar, Icon } from '../components/ui'
@@ -25,20 +25,12 @@ export default async function AgentsPage() {
   return (
     <StudioShell agents={agents} currentSection="agents">
       <main className="home-workspace agents-directory">
-        <div className="workspace-topbar">
-          <div className="topbar-search">
-            <Icon icon={Search01Icon} size={16} />
-            <span>Search agents…</span>
-            <kbd>⌘ K</kbd>
-          </div>
-        </div>
         <section className="home-hero agents-directory-hero">
           <div>
-            <p className="kicker">Your agent fleet</p>
-            <h1>Choose an agent to work with.</h1>
+            <p className="kicker">Your agents</p>
+            <h1>Choose an agent.</h1>
             <p>
-              Open an agent workspace to chat, save teachings, and run
-              evaluations.
+              Open an agent to chat, add knowledge, and improve its answers.
             </p>
           </div>
           <Link className="primary-button" href="/agents/new">

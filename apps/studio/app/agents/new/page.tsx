@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { ArrowLeft01Icon, Search01Icon } from '@hugeicons/core-free-icons'
+import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
 
 import { AgentForm } from '../../agent-form'
 import { StudioShell } from '../../components/studio-shell'
@@ -19,13 +19,6 @@ export default async function NewAgentPage({ searchParams }: PageProps) {
   return (
     <StudioShell agents={agents} currentSection="agents">
       <main className="home-workspace new-agent-page">
-        <div className="workspace-topbar">
-          <div className="topbar-search">
-            <Icon icon={Search01Icon} size={16} />
-            <span>Search agents…</span>
-            <kbd>⌘ K</kbd>
-          </div>
-        </div>
         <Link className="back-link" href="/agents">
           <Icon icon={ArrowLeft01Icon} size={16} /> Back to agents
         </Link>

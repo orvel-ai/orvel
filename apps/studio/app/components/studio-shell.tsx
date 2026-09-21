@@ -3,15 +3,9 @@ import Image from 'next/image'
 import type { ReactNode } from 'react'
 
 import {
-  AiSparklesIcon,
   DashboardSquare01Icon,
-  FolderLibraryIcon,
   Home01Icon,
-  Message01Icon,
   PlusSignIcon,
-  Search01Icon,
-  Settings01Icon,
-  TestTube01Icon,
 } from '@hugeicons/core-free-icons'
 import type { AgentDefinition } from '@orvel/sdk'
 
@@ -44,11 +38,6 @@ export function StudioShell({
           />
           <span>Orvel</span>
         </Link>
-        <label className="command-field">
-          <Icon icon={Search01Icon} size={16} />
-          <input aria-label="Search Studio" placeholder="Search…" readOnly />
-          <kbd>⌘ K</kbd>
-        </label>
         <nav className="sidebar-nav">
           <Link
             className={`sidebar-item ${currentSection === 'home' ? 'active' : ''}`}
@@ -64,25 +53,6 @@ export function StudioShell({
             <Icon icon={DashboardSquare01Icon} />
             Agents
           </Link>
-          <span className="sidebar-item muted" title="Coming soon">
-            <Icon icon={Message01Icon} />
-            Playground
-          </span>
-          <span
-            className="sidebar-item muted"
-            title="Use an agent workspace to run evaluations"
-          >
-            <Icon icon={TestTube01Icon} />
-            Evaluations
-          </span>
-          <span className="sidebar-item muted" title="Coming soon">
-            <Icon icon={FolderLibraryIcon} />
-            Library
-          </span>
-          <span className="sidebar-item muted" title="Coming soon">
-            <Icon icon={Settings01Icon} />
-            Settings
-          </span>
         </nav>
         <div className="sidebar-section-heading">
           <span>Your agents</span>
@@ -112,14 +82,6 @@ export function StudioShell({
               ) : null}
             </Link>
           ))}
-        </div>
-        <div className="profile-row">
-          <Avatar compact name="Mahmud" />
-          <span>
-            <strong>Mahmud</strong>
-            <small>Personal workspace</small>
-          </span>
-          <Icon icon={AiSparklesIcon} size={16} />
         </div>
       </aside>
       <div className="app-content">{children}</div>

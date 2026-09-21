@@ -165,12 +165,11 @@ export default function Home() {
         className="public-section public-agent-section"
         id="featured-agents"
       >
-        <div className="public-section-heading with-link">
+        <div className="public-section-heading">
           <div>
             <p className="public-eyebrow">Agent examples</p>
             <h2>Start with a familiar role.</h2>
           </div>
-          <span>Public discovery is coming soon</span>
         </div>
         <div className="public-agent-grid">
           {featuredAgents.map((agent) => (
