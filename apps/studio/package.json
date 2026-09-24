@@ -9,8 +9,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@orvel/local": "workspace:*",
+    "@hugeicons/core-free-icons": "^4.3.4",
+    "@hugeicons/react": "^1.1.10",
     "@orvel/groq": "workspace:*",
+    "@orvel/local": "workspace:*",
     "@orvel/ollama": "workspace:*",
     "@orvel/openai": "workspace:*",
     "@orvel/sdk": "workspace:*",

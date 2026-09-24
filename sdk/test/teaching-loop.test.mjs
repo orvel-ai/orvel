@@ -31,6 +31,12 @@ function createStore() {
     async createConversation(conversation) {
       conversations.push(conversation)
     },
+    async updateConversation(conversation) {
+      const index = conversations.findIndex(
+        (candidate) => candidate.id === conversation.id,
+      )
+      if (index >= 0) conversations[index] = conversation
+    },
     async getConversation(id) {
       return conversations.find((conversation) => conversation.id === id)
     },
@@ -71,6 +77,41 @@ function createStore() {
     },
   }
 }
+
+test('conversations can be given persistent custom names', async () => {
+  const client = createOrvelClient({
+    store: createStore(),
+    runtime: createRuntime({
+      providers: [
+        {
+          id: 'mock',
+          async generate() {
+            return { content: 'OK' }
+          },
+        },
+      ],
+    }),
+    createId: () => 'fixed-id',
+    now: () => new Date('2026-01-01T00:00:00.000Z'),
+  })
+  const agent = await client.createAgent({
+    name: 'SupportBot',
+    instructions: 'Help customers.',
+    model: { provider: 'mock', model: 'mock-1' },
+  })
+  const conversation = await client.createConversation(agent.id)
+  assert.equal(conversation.title, 'New conversation')
+
+  const renamed = await client.renameConversation(
+    conversation.id,
+    'Refund policy review',
+  )
+  assert.equal(renamed.title, 'Refund policy review')
+  assert.equal(
+    (await client.getConversation(conversation.id)).title,
+    'Refund policy review',
+  )
+})
 
 test('teaching is retrieved, passed as inspectable context, and used by the SDK run', async () => {
   const requests = []
