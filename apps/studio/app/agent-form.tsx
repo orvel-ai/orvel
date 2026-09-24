@@ -21,7 +21,7 @@ export function AgentForm({ ollamaModels, ollamaError }: AgentFormProps) {
       : 'gpt-4.1-mini'
 
   return (
-    <form action={createAgentAction} className="panel form-stack">
+    <form action={createAgentAction} className="panel form-stack agent-form">
       <div>
         <p className="eyebrow">New agent</p>
         <h2>Create an agent</h2>

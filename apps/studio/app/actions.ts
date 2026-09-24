@@ -32,7 +32,7 @@ export async function createAgentAction(formData: FormData): Promise<void> {
       },
     })
   } catch (error) {
-    withMessage('/', error)
+    withMessage('/?view=create', error)
   }
   revalidatePath('/')
   redirect(`/agents/${agent.id}`)
