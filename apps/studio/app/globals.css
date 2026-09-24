@@ -60,6 +60,50 @@ a {
 button {
   cursor: pointer;
 }
+
+.orvel-custom-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483647;
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform;
+}
+
+.orvel-custom-cursor__art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-image: url('/orvel-cursor-approved.png?v=outline-free');
+  background-position: -107px -93px;
+  background-repeat: no-repeat;
+  background-size: 234px 207px;
+  transform-origin: 6px 4px;
+  transition: transform 90ms ease-out;
+}
+
+.orvel-custom-cursor[data-visible='true'][data-over-text-input='false'] {
+  opacity: 1;
+}
+
+.orvel-custom-cursor[data-pressed='true'] .orvel-custom-cursor__art {
+  transform: translateY(1px) rotate(3deg);
+}
+
+@media (pointer: fine) {
+  .has-custom-cursor,
+  .has-custom-cursor button,
+  .has-custom-cursor a,
+  .has-custom-cursor label,
+  .has-custom-cursor select,
+  .has-custom-cursor summary {
+    cursor: none;
+  }
+}
+
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
