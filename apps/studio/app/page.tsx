@@ -1,9 +1,12 @@
 import Link from 'next/link'
 
 import { AgentForm } from './agent-form'
-import { getOllamaAvailability, orvel } from './lib/orvel'
+import { Icon, StudioShell, type StudioNavigationAgent } from './studio-shell'
+import { getOllamaAvailability, isProviderConfigured, orvel } from './lib/orvel'
 
-type PageProps = { searchParams: Promise<{ error?: string }> }
+type PageProps = {
+  searchParams: Promise<{ error?: string; view?: string }>
+}
 
 export default async function Home({ searchParams }: PageProps) {
   const [agents, parameters, ollama] = await Promise.all([
@@ -11,62 +14,204 @@ export default async function Home({ searchParams }: PageProps) {
     searchParams,
     getOllamaAvailability(),
   ])
+  const navigationAgents: StudioNavigationAgent[] = agents.map((agent) => ({
+    id: agent.id,
+    name: agent.name,
+    provider: agent.brain.provider,
+    model: agent.brain.model,
+  }))
+  const view = ['agents', 'create', 'settings'].includes(parameters.view ?? '')
+    ? parameters.view!
+    : 'welcome'
 
   return (
-    <main className="studio-shell">
-      <header className="masthead">
-        <Link className="wordmark" href="/" aria-label="Orvel Studio home">
-          Orvel
-        </Link>
-        <span className="status">v0.1 · Teach</span>
-      </header>
-
-      <section className="page-intro">
-        <p className="eyebrow">Agents</p>
-        <h1>Teach an agent through examples and corrections.</h1>
-        <p>
-          Create an agent, chat with it, save a correction, then let Orvel
-          retrieve relevant teaching for future responses.
-        </p>
-      </section>
-
-      {parameters.error ? (
-        <p className="alert" role="alert">
-          {parameters.error}
-        </p>
-      ) : null}
-
-      <section className="two-column" aria-label="Agent setup">
-        <div>
-          <h2>Your agents</h2>
-          {agents.length === 0 ? (
-            <p className="empty-state">
-              No agents yet. Create SupportBot to try the teaching loop.
-            </p>
-          ) : (
-            <div className="agent-list">
-              {agents.map((agent) => (
-                <Link
-                  className="agent-card"
-                  href={`/agents/${agent.id}`}
-                  key={agent.id}
-                >
-                  <span>{agent.name}</span>
-                  <small>
-                    {agent.brain.provider} · {agent.brain.model}
-                  </small>
-                  <p>{agent.description ?? agent.instructions}</p>
-                </Link>
-              ))}
+    <StudioShell currentSection={view} agents={navigationAgents}>
+      <main className="studio-main">
+        {view === 'welcome' ? (
+          <section className="welcome-screen">
+            <div className="welcome-brand">
+              <Icon name="agents" />
             </div>
-          )}
-        </div>
+            <p className="eyebrow">Orvel Studio</p>
+            <h1>Welcome</h1>
+            <p className="welcome-copy">
+              No view is open. Select an agent in the Explorer or start
+              something new.
+            </p>
+            <div className="welcome-actions">
+              <Link className="welcome-action" href="/?view=create">
+                <Icon name="plus" />
+                <span>
+                  <strong>Create an agent</strong>
+                  <small>Set up a new agent for your workspace</small>
+                </span>
+                <Icon name="chevron" />
+              </Link>
+              <Link className="welcome-action" href="/?view=agents">
+                <Icon name="agents" />
+                <span>
+                  <strong>Browse agents</strong>
+                  <small>See all agents in this workspace</small>
+                </span>
+                <Icon name="chevron" />
+              </Link>
+            </div>
+            <p className="welcome-hint">
+              Choose an agent or section from the Explorer to open it in this
+              workspace.
+            </p>
+          </section>
+        ) : null}
 
-        <AgentForm
-          ollamaModels={ollama.available ? ollama.models : []}
-          {...(!ollama.available ? { ollamaError: ollama.error } : {})}
-        />
-      </section>
-    </main>
+        {view === 'agents' ? (
+          <>
+            <header className="page-header">
+              <div>
+                <p className="eyebrow">Workspace</p>
+                <h1>Agents</h1>
+                <p>Create and manage your AI agents.</p>
+              </div>
+              <Link className="button button-primary" href="/?view=create">
+                <Icon name="plus" /> New agent
+              </Link>
+            </header>
+            <section aria-label="Your agents" className="agents-grid">
+              {agents.length === 0 ? (
+                <div className="empty-panel">
+                  <strong>Create your first agent</strong>
+                  <p>Give it a name and purpose to get started.</p>
+                  <Link className="button button-primary" href="/?view=create">
+                    Create an agent
+                  </Link>
+                </div>
+              ) : (
+                agents.map((agent) => (
+                  <Link
+                    className="agent-card"
+                    href={`/agents/${agent.id}`}
+                    key={agent.id}
+                  >
+                    <span
+                      className={`agent-avatar ${agent.id === 'research' ? 'avatar-dark' : agent.id === 'marketing' ? 'avatar-violet' : ''}`}
+                    >
+                      {agent.name.slice(0, 1).toUpperCase()}
+                    </span>
+                    <span className="agent-card-content">
+                      <strong>{agent.name}</strong>
+                      <small>
+                        {agent.brain.provider} · {agent.brain.model}
+                      </small>
+                      <span>{agent.description ?? agent.instructions}</span>
+                    </span>
+                    <Icon name="chevron" />
+                  </Link>
+                ))
+              )}
+            </section>
+          </>
+        ) : null}
+
+        {view === 'create' ? (
+          <>
+            <header className="page-header">
+              <div>
+                <Link className="back-link" href="/">
+                  ‹ Workspace
+                </Link>
+                <h1>New agent</h1>
+                <p>Start with a name and a clear purpose.</p>
+              </div>
+              <Link className="button button-quiet" href="/">
+                Cancel
+              </Link>
+            </header>
+            {parameters.error ? (
+              <p className="alert" role="alert">
+                {parameters.error}
+              </p>
+            ) : null}
+            <AgentForm
+              ollamaModels={ollama.available ? ollama.models : []}
+              {...(!ollama.available ? { ollamaError: ollama.error } : {})}
+            />
+          </>
+        ) : null}
+
+        {view === 'settings' ? (
+          <>
+            <header className="page-header">
+              <div>
+                <p className="eyebrow">Workspace</p>
+                <h1>Settings</h1>
+                <p>Configure providers for your local Studio.</p>
+              </div>
+            </header>
+            <section className="settings-grid" aria-label="Model providers">
+              <article className="settings-card">
+                <span className="provider-icon provider-green">O</span>
+                <div>
+                  <strong>Ollama</strong>
+                  <p>
+                    Run models on this machine. Start Ollama and pull a model to
+                    use it.
+                  </p>
+                  <small
+                    className={
+                      ollama.available ? 'status-ready' : 'status-offline'
+                    }
+                  >
+                    {ollama.available
+                      ? `${ollama.models.length} model${ollama.models.length === 1 ? '' : 's'} available`
+                      : 'Not available'}
+                  </small>
+                </div>
+              </article>
+              <article className="settings-card">
+                <span className="provider-icon provider-violet">G</span>
+                <div>
+                  <strong>Groq</strong>
+                  <p>
+                    Connect Groq by setting <code>GROQ_API_KEY</code> in
+                    Studio&apos;s <code>.env.local</code>.
+                  </p>
+                  <small
+                    className={
+                      isProviderConfigured('groq')
+                        ? 'status-ready'
+                        : 'status-offline'
+                    }
+                  >
+                    {isProviderConfigured('groq')
+                      ? 'Configured'
+                      : 'Needs setup'}
+                  </small>
+                </div>
+              </article>
+              <article className="settings-card">
+                <span className="provider-icon provider-dark">O</span>
+                <div>
+                  <strong>OpenAI</strong>
+                  <p>
+                    Connect OpenAI by setting <code>OPENAI_API_KEY</code> in
+                    Studio&apos;s <code>.env.local</code>.
+                  </p>
+                  <small
+                    className={
+                      isProviderConfigured('openai')
+                        ? 'status-ready'
+                        : 'status-offline'
+                    }
+                  >
+                    {isProviderConfigured('openai')
+                      ? 'Configured'
+                      : 'Needs setup'}
+                  </small>
+                </div>
+              </article>
+            </section>
+          </>
+        ) : null}
+      </main>
+    </StudioShell>
   )
 }
