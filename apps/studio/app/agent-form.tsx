@@ -46,24 +46,36 @@ export function AgentForm({ ollamaModels, ollamaError }: AgentFormProps) {
           rows={5}
         />
       </label>
-      <label>
-        General Knowledge — Recommended <span>optional</span>
-        <textarea
-          name="generalKnowledge"
-          rows={6}
-          maxLength={10000}
-          value={generalKnowledge}
-          onChange={(event) => setGeneralKnowledge(event.target.value)}
-          placeholder={
-            'Delivery takes 5–7 business days.\nReturns are accepted within 14 days.\nWe deliver throughout Nigeria.'
-          }
-        />
-        <small>
-          Add information this agent should know about your business, product,
-          or topic. {generalKnowledge.length.toLocaleString()} / 10,000
-          characters
-        </small>
-      </label>
+      <details className="advanced-fields">
+        <summary>Advanced configuration</summary>
+        <label>
+          Knowledge notes <span>optional</span>
+          <textarea
+            name="generalKnowledge"
+            rows={4}
+            maxLength={10000}
+            value={generalKnowledge}
+            onChange={(event) => setGeneralKnowledge(event.target.value)}
+            placeholder={
+              'Delivery takes 5–7 business days.\nReturns are accepted within 14 days.'
+            }
+          />
+          <small>
+            Quick facts for this agent. File, text and URL sources can be added
+            later in Knowledge. {generalKnowledge.length.toLocaleString()} /
+            10,000 characters
+          </small>
+        </label>
+        <label>
+          Visibility
+          <select name="visibility" defaultValue="private">
+            <option value="private">Private — only in this workspace</option>
+            <option value="public" disabled>
+              Public — publishing is not available yet
+            </option>
+          </select>
+        </label>
+      </details>
       <div className="form-row">
         <label>
           Provider
@@ -109,14 +121,13 @@ export function AgentForm({ ollamaModels, ollamaError }: AgentFormProps) {
         </p>
       ) : isGroq ? (
         <p className="provider-note">
-          Groq calls require <code>GROQ_API_KEY</code> in Studio&apos;s
-          server-side <code>.env.local</code>. Model availability and limits are
-          managed by Groq.
+          Groq runs in the cloud. Studio requires its server-side provider
+          configuration; model availability and limits are managed by Groq.
         </p>
       ) : (
         <p className="provider-note">
-          OpenAI calls require <code>OPENAI_API_KEY</code> in Studio&apos;s
-          server-side <code>.env.local</code>.
+          OpenAI is a cloud provider using your workspace&apos;s server-side
+          configuration.
         </p>
       )}
       <button type="submit">Create agent</button>

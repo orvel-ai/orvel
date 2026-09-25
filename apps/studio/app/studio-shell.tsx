@@ -23,10 +23,12 @@ type StudioShellProps = {
 }
 
 const sectionItems = [
+  { id: 'overview', label: 'Overview', icon: 'agents' },
   { id: 'chat', label: 'Chat', icon: 'chat' },
   { id: 'knowledge', label: 'Knowledge', icon: 'knowledge' },
-  { id: 'teachings', label: 'Teachings', icon: 'teachings' },
-  { id: 'evals', label: 'Evaluations', icon: 'evaluations' },
+  { id: 'teachings', label: 'Feedback', icon: 'teachings' },
+  { id: 'evals', label: 'Evals', icon: 'evaluations' },
+  { id: 'settings', label: 'Configuration', icon: 'settings' },
 ] as const
 
 export function Icon({ name }: { readonly name: string }) {
@@ -207,21 +209,24 @@ export function StudioShell({
                         <div key={item.id}>
                           <Link
                             aria-current={
-                              selected && currentSection === item.id
+                              selected &&
+                              (currentSection === item.id ||
+                                (item.id === 'overview' &&
+                                  currentSection === 'chat'))
                                 ? 'page'
                                 : undefined
                             }
-                            className={`tree-section-link${selected && currentSection === item.id ? ' selected' : ''}`}
-                            href={`/agents/${agent.id}${item.id === 'chat' ? '' : `?tab=${item.id}`}`}
+                            className={`tree-section-link${selected && (currentSection === item.id || (item.id === 'overview' && currentSection === 'chat')) ? ' selected' : ''}`}
+                            href={`/agents/${agent.id}${item.id === 'overview' ? '' : `?tab=${item.id}`}`}
                             onClick={() => setExplorerOpen(false)}
                           >
                             <Icon name={item.icon} />
                             <span>{item.label}</span>
-                            {item.id === 'chat' && conversations.length ? (
-                              <small>{conversations.length}</small>
+                            {item.id === 'overview' && conversations.length ? (
+                              <small>{conversations.length} chats</small>
                             ) : null}
                           </Link>
-                          {item.id === 'chat' &&
+                          {item.id === 'overview' &&
                           selected &&
                           currentSection === 'chat' &&
                           conversations.length ? (

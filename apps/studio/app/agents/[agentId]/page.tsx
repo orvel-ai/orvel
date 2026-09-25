@@ -9,6 +9,7 @@ import {
   sendMessageAction,
   startConversationAction,
   updateGeneralKnowledgeAction,
+  updateAgentAction,
 } from '../../actions'
 import {
   Icon,
@@ -50,7 +51,8 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
   const tab =
     parameters.tab === 'teachings' ||
     parameters.tab === 'evals' ||
-    parameters.tab === 'knowledge'
+    parameters.tab === 'knowledge' ||
+    parameters.tab === 'settings'
       ? parameters.tab
       : 'chat'
   const [conversations, teachings, evals, evalRuns, ollama] = await Promise.all(
@@ -267,6 +269,71 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
                 </>
               )}
             </div>
+          </section>
+        ) : null}
+
+        {tab === 'settings' ? (
+          <section className="panel">
+            <form action={updateAgentAction} className="form-stack agent-form">
+              <div>
+                <p className="eyebrow">Agent configuration</p>
+                <h2>Identity and behavior</h2>
+                <p>Changes apply to the agent the next time it runs.</p>
+              </div>
+              <input type="hidden" name="agentId" value={agentId} />
+              <label>
+                Name
+                <input name="name" defaultValue={agent.name} required />
+              </label>
+              <label>
+                Purpose
+                <input
+                  name="description"
+                  defaultValue={agent.description ?? ''}
+                  placeholder="What this agent helps with"
+                />
+              </label>
+              <label>
+                Instructions
+                <textarea
+                  name="instructions"
+                  defaultValue={agent.instructions}
+                  required
+                  rows={8}
+                />
+              </label>
+              <div className="form-row">
+                <label>
+                  Provider
+                  <select name="provider" defaultValue={agent.brain.provider}>
+                    <option value="ollama">Ollama · Local</option>
+                    <option value="groq">Groq · Cloud</option>
+                    <option value="openai">OpenAI · Cloud</option>
+                  </select>
+                </label>
+                <label>
+                  Model
+                  <input
+                    name="model"
+                    defaultValue={agent.brain.model}
+                    required
+                  />
+                </label>
+              </div>
+              <label>
+                Visibility
+                <select
+                  name="visibility"
+                  defaultValue={agent.visibility ?? 'private'}
+                >
+                  <option value="private">Private</option>
+                  <option value="public" disabled>
+                    Public · publishing is not available yet
+                  </option>
+                </select>
+              </label>
+              <button type="submit">Save changes</button>
+            </form>
           </section>
         ) : null}
 

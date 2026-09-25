@@ -18,6 +18,7 @@ export interface AgentDefinition {
   readonly description?: string
   readonly instructions: string
   readonly generalKnowledge?: string
+  readonly visibility?: 'private' | 'public'
   readonly brain: ModelConfig
   readonly createdAt: Date
   readonly updatedAt: Date
@@ -30,6 +31,7 @@ export interface CreateAgentInput {
   readonly description?: string
   readonly instructions: string
   readonly generalKnowledge?: string
+  readonly visibility?: 'private' | 'public'
   readonly model: ModelConfig
 }
 
@@ -38,6 +40,7 @@ export interface UpdateAgentInput {
   readonly description?: string
   readonly instructions?: string
   readonly generalKnowledge?: string
+  readonly visibility?: 'private' | 'public'
   readonly model?: ModelConfig
 }
 
@@ -138,6 +141,7 @@ export function createAgent(
   const now = options.now ?? new Date()
   const description = input.description?.trim()
   const generalKnowledge = input.generalKnowledge?.trim()
+  const visibility = input.visibility ?? 'private'
 
   if (
     generalKnowledge &&
@@ -152,6 +156,7 @@ export function createAgent(
     ...(description ? { description } : {}),
     instructions,
     ...(generalKnowledge ? { generalKnowledge } : {}),
+    visibility,
     brain: {
       provider,
       model,
@@ -180,6 +185,7 @@ export function updateAgent(
     input.generalKnowledge === undefined
       ? agent.generalKnowledge
       : input.generalKnowledge.trim()
+  const visibility = input.visibility ?? agent.visibility ?? 'private'
   const model = input.model ?? agent.brain
   const provider = model.provider.trim()
   const modelName = model.model.trim()
@@ -201,6 +207,7 @@ export function updateAgent(
     ...(description ? { description } : {}),
     instructions,
     ...(generalKnowledge ? { generalKnowledge } : {}),
+    visibility,
     brain: {
       provider,
       model: modelName,

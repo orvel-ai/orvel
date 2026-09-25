@@ -55,6 +55,28 @@ export async function updateGeneralKnowledgeAction(
   )
 }
 
+export async function updateAgentAction(formData: FormData): Promise<void> {
+  const agentId = value(formData, 'agentId')
+  try {
+    await orvel.updateAgent(agentId, {
+      name: value(formData, 'name'),
+      description: value(formData, 'description'),
+      instructions: value(formData, 'instructions'),
+      model: {
+        provider: value(formData, 'provider'),
+        model: value(formData, 'model'),
+      },
+      visibility:
+        value(formData, 'visibility') === 'public' ? 'public' : 'private',
+    })
+  } catch (error) {
+    withMessage(`/agents/${agentId}?tab=settings`, error)
+  }
+  revalidatePath('/')
+  revalidatePath(`/agents/${agentId}`)
+  redirect(`/agents/${agentId}?tab=settings&notice=Agent%20saved`)
+}
+
 export async function startConversationAction(
   formData: FormData,
 ): Promise<void> {
