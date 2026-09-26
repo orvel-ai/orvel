@@ -105,6 +105,12 @@ export function Icon({ name }: { readonly name: string }) {
         <path d="M12 5v14M5 12h14" />
       </>
     ),
+    edit: (
+      <>
+        <path d="M12 20h9" />
+        <path d="m16.5 3.5 4 4L8 20l-5 1 1-5 12.5-12.5Z" />
+      </>
+    ),
     chevron: <path d="m9 18 6-6-6-6" />,
     search: (
       <>
@@ -160,9 +166,6 @@ export function StudioShell({
       ) : null}
 
       <aside className="studio-rail" aria-label="Studio navigation">
-        <Link aria-label="Orvel home" className="rail-brand" href="/">
-          <Icon name="agents" />
-        </Link>
         <nav className="rail-navigation" aria-label="Workspace sections">
           <Link
             aria-label="Home"
@@ -223,10 +226,10 @@ export function StudioShell({
 
       <aside className={`studio-explorer${explorerOpen ? ' is-open' : ''}`}>
         <header className="chat-sidebar-brand">
-          <Link aria-label="Orvel home" className="brand-mark" href="/">
-            <Icon name="agents" />
+          <Link aria-label="Orvel home" className="chat-brand" href="/">
+            <span>Orvel</span>
+            <Icon name="chevron" />
           </Link>
-          <span>Orvel</span>
           <button
             aria-label="Close sidebar"
             className="icon-button mobile-close"
@@ -241,14 +244,14 @@ export function StudioShell({
           <form action={startConversationAction} className="new-chat-form">
             <input name="agentId" type="hidden" value={activeAgentId} />
             <button className="new-chat-button" type="submit">
-              <Icon name="plus" /> New chat
+              <Icon name="edit" /> New chat
             </button>
           </form>
         ) : agents[0] ? (
           <form action={startConversationAction} className="new-chat-form">
             <input name="agentId" type="hidden" value={agents[0].id} />
             <button className="new-chat-button" type="submit">
-              <Icon name="plus" /> New chat
+              <Icon name="edit" /> New chat
             </button>
           </form>
         ) : (
@@ -406,7 +409,7 @@ export function StudioShell({
                     </button>
                     <Link
                       className="tree-agent-link"
-                      href={`/agents/${agent.id}`}
+                      href={`/agents/${agent.id}?tab=playground`}
                     >
                       <span className="agent-avatar">
                         {agent.name.slice(0, 1).toUpperCase()}
@@ -424,7 +427,7 @@ export function StudioShell({
                               : undefined
                           }
                           className={`tree-section-link${selected && currentSection === item.id ? ' selected' : ''}`}
-                          href={`/agents/${agent.id}${item.id === 'overview' ? '' : `?tab=${item.id}`}`}
+                          href={`/agents/${agent.id}?tab=${item.id}`}
                           key={item.id}
                         >
                           <Icon name={item.icon} /> <span>{item.label}</span>

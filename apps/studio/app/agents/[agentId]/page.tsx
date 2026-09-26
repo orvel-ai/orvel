@@ -10,6 +10,7 @@ import {
   runEvalAction,
   saveTeachingAction,
   sendMessageAction,
+  startConversationAction,
   updateGeneralKnowledgeAction,
   updateAgentAction,
 } from '../../actions'
@@ -65,7 +66,7 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
       ? parameters.tab === 'chat'
         ? 'playground'
         : parameters.tab
-      : 'overview'
+      : 'playground'
   const [
     conversations,
     teachings,
@@ -92,7 +93,8 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
   const firstUserMessage = messages.find((message) => message.role === 'user')
   const chatTitle =
     conversation?.title ??
-    (firstUserMessage?.content.replace(/\s+/g, ' ').trim() || agent.name)
+    (firstUserMessage?.content.replace(/\s+/g, ' ').trim() ||
+      (conversation ? 'New chat' : agent.name))
   const shortChatTitle =
     chatTitle.length > 72 ? `${chatTitle.slice(0, 71).trimEnd()}…` : chatTitle
   const navigationAgents: StudioNavigationAgent[] =
@@ -244,10 +246,26 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
               ) : null}
               {!conversation ? (
                 <div className="empty-chat">
-                  <h2>Ready when you are</h2>
-                  <p>
-                    Create a conversation, then try a question for this agent.
-                  </p>
+                  <h2>What would you like to work on?</h2>
+                  <form
+                    action={startConversationAction}
+                    className="home-composer empty-chat-composer"
+                  >
+                    <input type="hidden" name="agentId" value={agentId} />
+                    <textarea
+                      name="content"
+                      required
+                      rows={2}
+                      placeholder={`Message ${agent.name}…`}
+                    />
+                    <button
+                      aria-label="Start conversation"
+                      title="Start conversation"
+                      type="submit"
+                    >
+                      <Icon name="send" />
+                    </button>
+                  </form>
                 </div>
               ) : (
                 <>

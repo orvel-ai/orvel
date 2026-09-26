@@ -119,7 +119,7 @@ export default async function Home({ searchParams }: PageProps) {
                 agents.map((agent) => (
                   <Link
                     className="agent-card"
-                    href={`/agents/${agent.id}`}
+                    href={`/agents/${agent.id}?tab=playground`}
                     key={agent.id}
                   >
                     <span
