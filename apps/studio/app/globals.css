@@ -2174,6 +2174,111 @@ select:focus {
   }
 }
 
+/* Quiet browser-toolbar treatment for app controls. */
+.new-chat-button,
+.button,
+.icon-button,
+.rail-link,
+.rail-profile > summary,
+.home-composer > button,
+.studio-chat-main .composer button,
+.composer button,
+.form-stack > button,
+.panel button[type='submit'],
+.secondary-button,
+.conversation-actions button {
+  border: 1px solid #e4e6ea;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #252a31;
+  box-shadow:
+    0 2px 8px #151b240d,
+    inset 0 1px #ffffff;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+.new-chat-button:hover,
+.button:hover,
+.icon-button:hover,
+.rail-link:hover,
+.rail-profile > summary:hover,
+.home-composer > button:hover,
+.studio-chat-main .composer button:hover,
+.composer button:hover,
+.form-stack > button:hover,
+.panel button[type='submit']:hover,
+.secondary-button:hover,
+.conversation-actions button:hover {
+  border-color: #d8dbe0;
+  background: #f8f9fa;
+  color: #161a20;
+  box-shadow:
+    0 4px 12px #151b2412,
+    inset 0 1px #ffffff;
+  transform: translateY(-1px);
+}
+.button-primary {
+  border-color: #dfe2e7;
+  background: #fff;
+  color: #20242c;
+  box-shadow:
+    0 3px 10px #171c260f,
+    inset 0 1px #fff;
+}
+.button-primary:hover {
+  border-color: #d5d9df;
+  background: #f7f8fa;
+  color: #171b21;
+}
+.button-danger {
+  border-color: #edc3c6;
+  background: #fff7f7;
+  color: #a52f39;
+}
+.button-danger:hover {
+  border-color: #efdadc;
+  background: #fff0f0;
+  color: #a52f39;
+}
+.home-composer > button,
+.studio-chat-main .composer button {
+  border-color: #e3e5e9;
+  background: #fff;
+  color: #20242c;
+}
+.home-composer > button:hover,
+.studio-chat-main .composer button:hover {
+  border-color: #d7dbe1;
+  background: #f5f6f8;
+}
+.rail-link.selected {
+  border-color: #e2e9f2;
+  border-radius: 50%;
+  background: #e5efff;
+  color: #347fe3;
+  box-shadow: none;
+  transform: none;
+}
+.rail-link {
+  border-radius: 50%;
+  box-shadow: none;
+}
+.icon-button {
+  width: 34px;
+  height: 34px;
+}
+.conversation-actions form:last-child button {
+  color: #a52f39;
+}
+.conversation-actions form:last-child button:hover {
+  border-color: #efdadc;
+  background: #fff5f5;
+  color: #a52f39;
+}
+
 @media (prefers-reduced-transparency: reduce) {
   .floating-dock,
   .profile-popover {
