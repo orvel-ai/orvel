@@ -135,11 +135,18 @@ export async function startConversationAction(
   formData: FormData,
 ): Promise<void> {
   const agentId = value(formData, 'agentId')
+  const content = value(formData, 'content').trim()
   let conversation
   try {
     conversation = await orvel.createConversation(agentId)
+    if (content) {
+      await orvel.sendMessage({
+        conversationId: conversation.id,
+        content,
+      })
+    }
   } catch (error) {
-    withMessage(`/agents/${agentId}`, error)
+    withMessage(`/agents/${agentId}?tab=playground`, error)
   }
   revalidatePath(`/agents/${agentId}`)
   redirect(`/agents/${agentId}?tab=playground&conversation=${conversation.id}`)

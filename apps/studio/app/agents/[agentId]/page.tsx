@@ -89,6 +89,12 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
     conversations.find((item) => item.id === parameters.conversation) ??
     conversations[0]
   const messages = conversation ? await orvel.listMessages(conversation.id) : []
+  const firstUserMessage = messages.find((message) => message.role === 'user')
+  const chatTitle =
+    conversation?.title ??
+    (firstUserMessage?.content.replace(/\s+/g, ' ').trim() || agent.name)
+  const shortChatTitle =
+    chatTitle.length > 72 ? `${chatTitle.slice(0, 71).trimEnd()}…` : chatTitle
   const navigationAgents: StudioNavigationAgent[] =
     await createStudioNavigation(allAgents)
 
@@ -108,10 +114,10 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
           className={`agent-header${tab === 'playground' ? ' chat-page-header' : ''}`}
         >
           <div>
-            <h1>{agent.name}</h1>
+            <h1>{tab === 'playground' ? shortChatTitle : agent.name}</h1>
             <p>
               {tab === 'playground'
-                ? agent.brain.model
+                ? agent.name
                 : (agent.description ?? agent.instructions)}
             </p>
           </div>
@@ -412,13 +418,15 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
                       name="content"
                       required
                       rows={3}
-                      placeholder="Ask a question…"
+                      placeholder={`Message ${agent.name}…`}
                     />
                     <button
                       type="submit"
                       disabled={!isProviderConfigured(agent.brain.provider)}
+                      aria-label="Send message"
+                      title="Send message"
                     >
-                      Send
+                      <Icon name="send" />
                     </button>
                   </form>
                 </>

@@ -47,6 +47,23 @@ export function Icon({ name }: { readonly name: string }) {
         <path d="M8 9h8M8 13h5" />
       </>
     ),
+    home: (
+      <>
+        <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z" />
+      </>
+    ),
+    history: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </>
+    ),
+    library: (
+      <>
+        <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5Z" />
+        <path d="M4 17a2.5 2.5 0 0 1 2.5-2.5H20M8 7h8" />
+      </>
+    ),
     chat: (
       <>
         <path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-4-.9L4 20l1.3-3.6A7.2 7.2 0 0 1 4 12c0-4.4 3.6-8 8-8s8 3.1 8 7.5Z" />
@@ -101,6 +118,7 @@ export function Icon({ name }: { readonly name: string }) {
         <path d="M9 12h11" />
       </>
     ),
+    send: <path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13" />,
   }
 
   return (
@@ -140,6 +158,68 @@ export function StudioShell({
           type="button"
         />
       ) : null}
+
+      <aside className="studio-rail" aria-label="Studio navigation">
+        <Link aria-label="Orvel home" className="rail-brand" href="/">
+          <Icon name="agents" />
+        </Link>
+        <nav className="rail-navigation" aria-label="Workspace sections">
+          <Link
+            aria-label="Home"
+            className={`rail-link${currentSection === 'welcome' ? ' selected' : ''}`}
+            href="#recent-conversations"
+            title="Home"
+          >
+            <Icon name="home" />
+          </Link>
+          <Link
+            aria-label="Recent chats"
+            className={`rail-link${activeConversationId ? ' selected' : ''}`}
+            href="/"
+            title="Recent chats"
+          >
+            <Icon name="history" />
+          </Link>
+          <Link
+            aria-label="Agents"
+            className={`rail-link${currentSection === 'agents' ? ' selected' : ''}`}
+            href="/?view=agents"
+            title="Agents"
+          >
+            <Icon name="agents" />
+          </Link>
+          {activeAgentId ? (
+            <Link
+              aria-label="Knowledge"
+              className={`rail-link${currentSection === 'knowledge' ? ' selected' : ''}`}
+              href={`/agents/${activeAgentId}?tab=knowledge`}
+              title="Knowledge"
+            >
+              <Icon name="knowledge" />
+            </Link>
+          ) : null}
+        </nav>
+        <div className="rail-bottom">
+          <Link
+            aria-label="Settings"
+            className={`rail-link${currentSection === 'settings' ? ' selected' : ''}`}
+            href="/?view=settings"
+            title="Settings"
+          >
+            <Icon name="settings" />
+          </Link>
+          <details className="rail-profile">
+            <summary aria-label="Profile" title="Profile">
+              <span>O</span>
+            </summary>
+            <div className="profile-popover">
+              <strong>Orvel Studio</strong>
+              <span>Local workspace</span>
+              <Link href="/?view=settings">Workspace settings</Link>
+            </div>
+          </details>
+        </div>
+      </aside>
 
       <aside className={`studio-explorer${explorerOpen ? ' is-open' : ''}`}>
         <header className="chat-sidebar-brand">
@@ -193,7 +273,11 @@ export function StudioShell({
             value={conversationQuery}
           />
         </label>
-        <nav aria-label="Recent conversations" className="recent-chat-list">
+        <nav
+          aria-label="Recent conversations"
+          className="recent-chat-list"
+          id="recent-conversations"
+        >
           <p className="sidebar-section-label">Recents</p>
           {agents
             .flatMap((agent) =>
@@ -356,23 +440,6 @@ export function StudioShell({
             <Icon name="plus" /> Create an agent
           </Link>
         </details>
-
-        <footer className="sidebar-footer">
-          <Link href="/?view=settings">
-            <Icon name="settings" /> Settings
-          </Link>
-          <details className="dock-profile">
-            <summary>
-              <Icon name="person" />
-              <span>Orvel Studio</span>
-            </summary>
-            <div className="profile-popover">
-              <strong>Orvel Studio</strong>
-              <span>Local workspace</span>
-              <Link href="/">Back to workspace</Link>
-            </div>
-          </details>
-        </footer>
       </aside>
 
       {children}

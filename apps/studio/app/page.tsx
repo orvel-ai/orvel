@@ -36,52 +36,61 @@ export default async function Home({ searchParams }: PageProps) {
       <main className="studio-main">
         {view === 'welcome' ? (
           <section className="welcome-screen">
-            <div className="welcome-brand">
-              <Icon name="agents" />
-            </div>
-            <p className="eyebrow">Orvel Studio</p>
-            <h1>What are we working on?</h1>
+            <p className="eyebrow">Orvel</p>
+            <h1>What would you like to work on?</h1>
             <p className="welcome-copy">
-              Start a conversation with one of your agents, or create a new
-              agent for a different task.
+              Choose an agent and start a conversation.
             </p>
-            <div className="welcome-actions">
-              {agents[0] ? (
-                <form action={startConversationAction}>
-                  <input name="agentId" type="hidden" value={agents[0].id} />
-                  <button className="welcome-action" type="submit">
-                    <Icon name="plus" />
-                    <span>
-                      <strong>Start a chat</strong>
-                      <small>
-                        Open a new conversation with {agents[0].name}
-                      </small>
-                    </span>
-                    <Icon name="chevron" />
-                  </button>
-                </form>
-              ) : (
-                <Link className="welcome-action" href="/?view=create">
-                  <Icon name="plus" />
-                  <span>
-                    <strong>Create an agent</strong>
-                    <small>Set up a new agent for your workspace</small>
-                  </span>
-                  <Icon name="chevron" />
-                </Link>
-              )}
-              <Link className="welcome-action" href="/?view=agents">
-                <Icon name="agents" />
-                <span>
-                  <strong>Browse agents</strong>
-                  <small>See all agents in this workspace</small>
-                </span>
-                <Icon name="chevron" />
+            {agents.length ? (
+              <form action={startConversationAction} className="home-composer">
+                <label className="visually-hidden" htmlFor="home-agent">
+                  Choose an agent
+                </label>
+                <select
+                  id="home-agent"
+                  name="agentId"
+                  defaultValue={agents[0]?.id}
+                >
+                  {agents.map((agent) => (
+                    <option key={agent.id} value={agent.id}>
+                      {agent.name} · {agent.brain.model}
+                    </option>
+                  ))}
+                </select>
+                <label className="visually-hidden" htmlFor="home-message">
+                  Message your agent
+                </label>
+                <textarea
+                  id="home-message"
+                  name="content"
+                  placeholder="Message your agent…"
+                  rows={2}
+                  required
+                />
+                <button
+                  aria-label="Start conversation"
+                  title="Start conversation"
+                  type="submit"
+                >
+                  <Icon name="send" />
+                </button>
+              </form>
+            ) : (
+              <Link
+                className="button button-primary home-create-agent"
+                href="/?view=create"
+              >
+                <Icon name="plus" /> Create your first agent
+              </Link>
+            )}
+            <div className="home-shortcuts">
+              <Link href="/?view=agents">
+                <Icon name="agents" /> Browse agents
+              </Link>
+              <Link href="/?view=create">
+                <Icon name="plus" /> Create an agent
               </Link>
             </div>
-            <p className="welcome-hint">
-              Your recent conversations are in the sidebar.
-            </p>
           </section>
         ) : null}
 
