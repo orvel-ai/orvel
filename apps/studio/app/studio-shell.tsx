@@ -124,7 +124,12 @@ export function Icon({ name }: { readonly name: string }) {
         <path d="M9 12h11" />
       </>
     ),
-    send: <path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13" />,
+    send: (
+      <>
+        <path d="M12 19V5" />
+        <path d="m5 12 7-7 7 7" />
+      </>
+    ),
   }
 
   return (
@@ -153,6 +158,7 @@ export function StudioShell({
   const [explorerOpen, setExplorerOpen] = useState(false)
   const [expandedAgent, setExpandedAgent] = useState(activeAgentId ?? '')
   const [conversationQuery, setConversationQuery] = useState('')
+  const knowledgeAgentId = activeAgentId ?? agents[0]?.id
 
   return (
     <div className="studio-app">
@@ -191,16 +197,14 @@ export function StudioShell({
           >
             <Icon name="agents" />
           </Link>
-          {activeAgentId ? (
-            <Link
-              aria-label="Knowledge"
-              className={`rail-link${currentSection === 'knowledge' ? ' selected' : ''}`}
-              href={`/agents/${activeAgentId}?tab=knowledge`}
-              title="Knowledge"
-            >
-              <Icon name="knowledge" />
-            </Link>
-          ) : null}
+          <Link
+            aria-label="Knowledge"
+            className={`rail-link${currentSection === 'knowledge' ? ' selected' : ''}`}
+            href={knowledgeAgentId ? `/agents/${knowledgeAgentId}?tab=knowledge` : '/?view=agents'}
+            title="Knowledge"
+          >
+            <Icon name="knowledge" />
+          </Link>
         </nav>
         <div className="rail-bottom">
           <Link
