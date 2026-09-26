@@ -9,6 +9,8 @@ import {
   orvel,
 } from './lib/orvel'
 import type { ProviderModelOptions } from './model-selector'
+import { createStudioNavigation } from './lib/studio-navigation'
+import { startConversationAction } from './actions'
 
 type PageProps = {
   searchParams: Promise<{ error?: string; view?: string }>
@@ -19,12 +21,8 @@ export default async function Home({ searchParams }: PageProps) {
     orvel.listAgents(),
     searchParams,
   ])
-  const navigationAgents: StudioNavigationAgent[] = agents.map((agent) => ({
-    id: agent.id,
-    name: agent.name,
-    provider: agent.brain.provider,
-    model: agent.brain.model,
-  }))
+  const navigationAgents: StudioNavigationAgent[] =
+    await createStudioNavigation(agents)
   const view = ['agents', 'create', 'settings'].includes(parameters.view ?? '')
     ? parameters.view!
     : 'welcome'
@@ -42,20 +40,36 @@ export default async function Home({ searchParams }: PageProps) {
               <Icon name="agents" />
             </div>
             <p className="eyebrow">Orvel Studio</p>
-            <h1>Welcome</h1>
+            <h1>What are we working on?</h1>
             <p className="welcome-copy">
-              No view is open. Select an agent in the Explorer or start
-              something new.
+              Start a conversation with one of your agents, or create a new
+              agent for a different task.
             </p>
             <div className="welcome-actions">
-              <Link className="welcome-action" href="/?view=create">
-                <Icon name="plus" />
-                <span>
-                  <strong>Create an agent</strong>
-                  <small>Set up a new agent for your workspace</small>
-                </span>
-                <Icon name="chevron" />
-              </Link>
+              {agents[0] ? (
+                <form action={startConversationAction}>
+                  <input name="agentId" type="hidden" value={agents[0].id} />
+                  <button className="welcome-action" type="submit">
+                    <Icon name="plus" />
+                    <span>
+                      <strong>Start a chat</strong>
+                      <small>
+                        Open a new conversation with {agents[0].name}
+                      </small>
+                    </span>
+                    <Icon name="chevron" />
+                  </button>
+                </form>
+              ) : (
+                <Link className="welcome-action" href="/?view=create">
+                  <Icon name="plus" />
+                  <span>
+                    <strong>Create an agent</strong>
+                    <small>Set up a new agent for your workspace</small>
+                  </span>
+                  <Icon name="chevron" />
+                </Link>
+              )}
               <Link className="welcome-action" href="/?view=agents">
                 <Icon name="agents" />
                 <span>
@@ -66,8 +80,7 @@ export default async function Home({ searchParams }: PageProps) {
               </Link>
             </div>
             <p className="welcome-hint">
-              Choose an agent or section from the Explorer to open it in this
-              workspace.
+              Your recent conversations are in the sidebar.
             </p>
           </section>
         ) : null}

@@ -10,7 +10,6 @@ import {
   runEvalAction,
   saveTeachingAction,
   sendMessageAction,
-  startConversationAction,
   updateGeneralKnowledgeAction,
   updateAgentAction,
 } from '../../actions'
@@ -27,6 +26,7 @@ import {
 } from '../../lib/orvel'
 import { ModelSelector, type ProviderModelOptions } from '../../model-selector'
 import { DeleteAgentControl } from '../../delete-agent-control'
+import { createStudioNavigation } from '../../lib/studio-navigation'
 
 type PageProps = {
   params: Promise<{ agentId: string }>
@@ -89,37 +89,8 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
     conversations.find((item) => item.id === parameters.conversation) ??
     conversations[0]
   const messages = conversation ? await orvel.listMessages(conversation.id) : []
-  const conversationTitles = await Promise.all(
-    conversations.map(async (conversationItem) => {
-      const conversationMessages = await orvel.listMessages(conversationItem.id)
-      const firstUserMessage = conversationMessages.find(
-        (message) => message.role === 'user',
-      )
-      const title = firstUserMessage?.content.replace(/\s+/g, ' ').trim()
-      return {
-        id: conversationItem.id,
-        label:
-          conversationItem.title ??
-          (title
-            ? title.length > 38
-              ? `${title.slice(0, 37)}…`
-              : title
-            : 'New conversation'),
-        updatedAt: time(conversationItem.updatedAt),
-      }
-    }),
-  )
-  const navigationAgents: StudioNavigationAgent[] = allAgents.map((item) => ({
-    id: item.id,
-    name: item.name,
-    provider: item.brain.provider,
-    model: item.brain.model,
-    ...(item.id === agentId
-      ? {
-          conversations: conversationTitles,
-        }
-      : {}),
-  }))
+  const navigationAgents: StudioNavigationAgent[] =
+    await createStudioNavigation(allAgents)
 
   return (
     <StudioShell
@@ -130,27 +101,24 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
         ? { activeConversationId: parameters.conversation }
         : {})}
     >
-      <main className="studio-main">
-        <section className="agent-header">
+      <main
+        className={`studio-main${tab === 'playground' ? ' studio-chat-main' : ''}`}
+      >
+        <section
+          className={`agent-header${tab === 'playground' ? ' chat-page-header' : ''}`}
+        >
           <div>
-            <Link className="back-link" href="/">
-              ‹ Workspace
-            </Link>
             <h1>{agent.name}</h1>
-            <p>{agent.description ?? agent.instructions}</p>
+            <p>
+              {tab === 'playground'
+                ? agent.brain.model
+                : (agent.description ?? agent.instructions)}
+            </p>
           </div>
           <div className="agent-header-actions">
             <div className="model-chip">
               {agent.brain.provider} · {agent.brain.model}
             </div>
-            {tab === 'playground' ? (
-              <form action={startConversationAction}>
-                <input type="hidden" name="agentId" value={agentId} />
-                <button className="button button-primary" type="submit">
-                  <Icon name="plus" /> New conversation
-                </button>
-              </form>
-            ) : null}
           </div>
         </section>
 
