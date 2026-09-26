@@ -889,9 +889,11 @@ button:disabled {
 }
 .studio-chat-main .messages {
   width: min(740px, 100%);
+  min-width: 0;
   margin: 0 auto;
   padding: 38px 22px 30px;
   gap: 28px;
+  overflow-x: hidden;
 }
 .studio-chat-main .composer {
   width: min(740px, calc(100% - 44px));
@@ -931,6 +933,7 @@ button:disabled {
 }
 .studio-chat-main .message {
   width: fit-content;
+  min-width: 0;
   max-width: min(76%, 740px);
   padding: 0;
   border-radius: 0;
@@ -939,6 +942,7 @@ button:disabled {
   font-size: 16px;
 }
 .studio-chat-main .message.user {
+  overflow-wrap: anywhere;
   max-width: min(70%, 660px);
   padding: 13px 18px;
   border-radius: 22px;
@@ -949,6 +953,7 @@ button:disabled {
   display: none;
 }
 .studio-chat-main .message p {
+  overflow-wrap: anywhere;
   line-height: 1.7;
 }
 .studio-chat-main .chat-panel {
@@ -2064,6 +2069,7 @@ select:focus {
     padding: 0 8px;
   }
   .studio-chat-main .composer {
+    min-width: 0;
     width: calc(100% - 16px);
     min-height: 64px;
     margin-bottom: 10px;
@@ -2071,6 +2077,8 @@ select:focus {
     border-radius: 23px;
   }
   .studio-chat-main .composer textarea {
+    min-width: 0;
+    flex: 1;
     min-height: 48px;
     padding: 13px 2px;
     font-size: 13px;
