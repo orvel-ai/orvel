@@ -3,22 +3,24 @@
 import { useState } from 'react'
 
 import { createAgentAction } from './actions'
+import { ModelSelector, type ProviderModelOptions } from './model-selector'
 
 type AgentFormProps = {
-  readonly ollamaModels: readonly string[]
-  readonly ollamaError?: string
+  readonly providerOptions: ProviderModelOptions
 }
 
-export function AgentForm({ ollamaModels, ollamaError }: AgentFormProps) {
-  const [provider, setProvider] = useState('ollama')
+export function AgentForm({ providerOptions }: AgentFormProps) {
   const [generalKnowledge, setGeneralKnowledge] = useState('')
-  const isOllama = provider === 'ollama'
-  const isGroq = provider === 'groq'
-  const defaultModel = isOllama
-    ? (ollamaModels[0] ?? 'llama3.2:3b')
-    : isGroq
-      ? 'openai/gpt-oss-20b'
-      : 'gpt-4.1-mini'
+  const initialProvider = providerOptions.ollama.configured
+    ? 'ollama'
+    : providerOptions.groq.configured
+      ? 'groq'
+      : providerOptions.openai.configured
+        ? 'openai'
+        : 'ollama'
+  const initialModel =
+    providerOptions[initialProvider].models[0] ??
+    (initialProvider === 'ollama' ? 'llama3.2:3b' : '')
 
   return (
     <form action={createAgentAction} className="panel form-stack agent-form">
@@ -76,60 +78,11 @@ export function AgentForm({ ollamaModels, ollamaError }: AgentFormProps) {
           </select>
         </label>
       </details>
-      <div className="form-row">
-        <label>
-          Provider
-          <select
-            name="provider"
-            value={provider}
-            onChange={(event) => setProvider(event.target.value)}
-          >
-            <option value="ollama">Ollama (Local)</option>
-            <option value="groq">Groq (Cloud)</option>
-            <option value="openai">OpenAI</option>
-          </select>
-        </label>
-        <label>
-          Model
-          <input
-            key={provider}
-            name="model"
-            defaultValue={defaultModel}
-            list={isOllama && ollamaModels.length ? 'ollama-models' : undefined}
-            placeholder={
-              isOllama
-                ? 'e.g. llama3.2:3b'
-                : isGroq
-                  ? 'openai/gpt-oss-20b'
-                  : 'gpt-4.1-mini'
-            }
-            required
-          />
-          {isOllama && ollamaModels.length ? (
-            <datalist id="ollama-models">
-              {ollamaModels.map((model) => (
-                <option key={model} value={model} />
-              ))}
-            </datalist>
-          ) : null}
-        </label>
-      </div>
-      {isOllama ? (
-        <p className="provider-note">
-          Ollama runs locally and needs to be installed and running.
-          {ollamaError ? ` ${ollamaError}` : ' No API key is needed.'}
-        </p>
-      ) : isGroq ? (
-        <p className="provider-note">
-          Groq runs in the cloud. Studio requires its server-side provider
-          configuration; model availability and limits are managed by Groq.
-        </p>
-      ) : (
-        <p className="provider-note">
-          OpenAI is a cloud provider using your workspace&apos;s server-side
-          configuration.
-        </p>
-      )}
+      <ModelSelector
+        options={providerOptions}
+        initialProvider={initialProvider}
+        initialModel={initialModel}
+      />
       <button type="submit">Create agent</button>
     </form>
   )

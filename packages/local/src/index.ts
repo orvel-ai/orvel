@@ -15,6 +15,21 @@ import type {
   TeachingRepository,
 } from '@orvel/training'
 
+interface KnowledgeEntry {
+  readonly id: string
+  readonly agentId: string
+  readonly title: string
+  readonly content: string
+  readonly sourceUrl?: string
+  readonly createdAt: Date
+}
+
+interface KnowledgeRepository {
+  createKnowledgeEntry(entry: KnowledgeEntry): Promise<void>
+  listKnowledgeEntries(agentId: string): Promise<readonly KnowledgeEntry[]>
+  deleteKnowledgeEntry(id: string): Promise<void>
+}
+
 interface SerializedAgent extends Omit<
   AgentDefinition,
   'createdAt' | 'updatedAt'
@@ -47,25 +62,35 @@ interface SerializedEvalRun extends Omit<EvalRun, 'createdAt'> {
   readonly createdAt: string
 }
 
+interface SerializedKnowledgeEntry extends Omit<KnowledgeEntry, 'createdAt'> {
+  readonly createdAt: string
+}
+
 interface StoreData {
-  readonly version: 1
+  readonly version: 2
   readonly agents: readonly SerializedAgent[]
   readonly conversations: readonly SerializedConversation[]
   readonly messages: readonly SerializedMessage[]
   readonly teachings: readonly SerializedTeaching[]
   readonly evals: readonly SerializedEvalCase[]
   readonly evalRuns: readonly SerializedEvalRun[]
+  readonly knowledgeEntries: readonly SerializedKnowledgeEntry[]
 }
 
 const emptyStore = (): StoreData => ({
-  version: 1,
+  version: 2,
   agents: [],
   conversations: [],
   messages: [],
   teachings: [],
   evals: [],
   evalRuns: [],
+  knowledgeEntries: [],
 })
+
+function fromKnowledgeEntry(entry: SerializedKnowledgeEntry): KnowledgeEntry {
+  return { ...entry, createdAt: new Date(entry.createdAt) }
+}
 
 function asAgent(agent: AgentDefinition): SerializedAgent {
   return {
@@ -136,7 +161,8 @@ export class FileStore
     AgentRepository,
     ConversationRepository,
     TeachingRepository,
-    EvalRepository
+    EvalRepository,
+    KnowledgeRepository
 {
   private writes: Promise<void> = Promise.resolve()
 
@@ -158,6 +184,39 @@ export class FileStore
     }))
   }
 
+  async deleteAgent(id: string): Promise<void> {
+    await this.mutate((data) => {
+      const conversationIds = new Set(
+        data.conversations
+          .filter((conversation) => conversation.agentId === id)
+          .map((conversation) => conversation.id),
+      )
+      const evalIds = new Set(
+        data.evals
+          .filter((evalCase) => evalCase.agentId === id)
+          .map((evalCase) => evalCase.id),
+      )
+      return {
+        ...data,
+        agents: data.agents.filter((agent) => agent.id !== id),
+        conversations: data.conversations.filter(
+          (conversation) => conversation.agentId !== id,
+        ),
+        messages: data.messages.filter(
+          (message) => !conversationIds.has(message.conversationId),
+        ),
+        teachings: data.teachings.filter((teaching) => teaching.agentId !== id),
+        evals: data.evals.filter((evalCase) => evalCase.agentId !== id),
+        evalRuns: data.evalRuns.filter(
+          (run) => run.agentId !== id && !evalIds.has(run.evalId),
+        ),
+        knowledgeEntries: data.knowledgeEntries.filter(
+          (entry) => entry.agentId !== id,
+        ),
+      }
+    })
+  }
+
   async getAgent(id: string): Promise<AgentDefinition | undefined> {
     const data = await this.read()
     const agent = data.agents.find((candidate) => candidate.id === id)
@@ -177,6 +236,29 @@ export class FileStore
     await this.mutate((data) => ({
       ...data,
       conversations: [...data.conversations, asConversation(conversation)],
+    }))
+  }
+
+  async updateConversation(conversation: Conversation): Promise<void> {
+    await this.mutate((data) => ({
+      ...data,
+      conversations: data.conversations.map((candidate) =>
+        candidate.id === conversation.id
+          ? asConversation(conversation)
+          : candidate,
+      ),
+    }))
+  }
+
+  async deleteConversation(id: string): Promise<void> {
+    await this.mutate((data) => ({
+      ...data,
+      conversations: data.conversations.filter(
+        (conversation) => conversation.id !== id,
+      ),
+      messages: data.messages.filter(
+        (message) => message.conversationId !== id,
+      ),
     }))
   }
 
@@ -294,6 +376,37 @@ export class FileStore
       )
   }
 
+  async createKnowledgeEntry(entry: KnowledgeEntry): Promise<void> {
+    await this.mutate((data) => ({
+      ...data,
+      knowledgeEntries: [
+        ...data.knowledgeEntries,
+        { ...entry, createdAt: entry.createdAt.toISOString() },
+      ],
+    }))
+  }
+
+  async listKnowledgeEntries(
+    agentId: string,
+  ): Promise<readonly KnowledgeEntry[]> {
+    const data = await this.read()
+    return data.knowledgeEntries
+      .filter((entry) => entry.agentId === agentId)
+      .map(fromKnowledgeEntry)
+      .sort(
+        (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
+      )
+  }
+
+  async deleteKnowledgeEntry(id: string): Promise<void> {
+    await this.mutate((data) => ({
+      ...data,
+      knowledgeEntries: data.knowledgeEntries.filter(
+        (entry) => entry.id !== id,
+      ),
+    }))
+  }
+
   private async mutate(update: (data: StoreData) => StoreData): Promise<void> {
     const write = this.writes.then(async () => {
       const data = await this.read()
@@ -308,6 +421,9 @@ export class FileStore
       const raw = await readFile(this.filePath, 'utf8')
       const data: unknown = JSON.parse(raw)
       if (!this.isStoreData(data)) throw new Error('Invalid store format')
+      if (data.version === 1) {
+        return { ...data, version: 2, knowledgeEntries: [] }
+      }
       return data
     } catch (error) {
       if (this.isMissingFile(error)) return emptyStore()
@@ -324,11 +440,16 @@ export class FileStore
     await rename(temporaryPath, this.filePath)
   }
 
-  private isStoreData(data: unknown): data is StoreData {
+  private isStoreData(
+    data: unknown,
+  ): data is
+    | StoreData
+    | (Omit<StoreData, 'version' | 'knowledgeEntries'> & { version: 1 }) {
     return (
       typeof data === 'object' &&
       data !== null &&
-      (data as { version?: unknown }).version === 1
+      ((data as { version?: unknown }).version === 1 ||
+        (data as { version?: unknown }).version === 2)
     )
   }
 

@@ -2,7 +2,10 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import {
+  addKnowledgeTextAction,
+  addKnowledgeUrlAction,
   createEvalAction,
+  deleteKnowledgeAction,
   deleteTeachingAction,
   runEvalAction,
   saveTeachingAction,
@@ -17,10 +20,13 @@ import {
   type StudioNavigationAgent,
 } from '../../studio-shell'
 import {
+  getProviderAvailability,
   getOllamaAvailability,
   isProviderConfigured,
   orvel,
 } from '../../lib/orvel'
+import { ModelSelector, type ProviderModelOptions } from '../../model-selector'
+import { DeleteAgentControl } from '../../delete-agent-control'
 
 type PageProps = {
   params: Promise<{ agentId: string }>
@@ -49,27 +55,60 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
   if (!agent) notFound()
 
   const tab =
+    parameters.tab === 'overview' ||
+    parameters.tab === 'playground' ||
+    parameters.tab === 'chat' ||
     parameters.tab === 'teachings' ||
     parameters.tab === 'evals' ||
     parameters.tab === 'knowledge' ||
     parameters.tab === 'settings'
-      ? parameters.tab
-      : 'chat'
-  const [conversations, teachings, evals, evalRuns, ollama] = await Promise.all(
-    [
-      orvel.listConversations(agentId),
-      orvel.listTeachings(agentId),
-      orvel.listEvals(agentId),
-      orvel.listEvalRuns(agentId),
-      agent.brain.provider === 'ollama'
-        ? getOllamaAvailability()
-        : Promise.resolve(undefined),
-    ],
-  )
+      ? parameters.tab === 'chat'
+        ? 'playground'
+        : parameters.tab
+      : 'overview'
+  const [
+    conversations,
+    teachings,
+    evals,
+    evalRuns,
+    knowledge,
+    ollama,
+    providerOptions,
+  ] = await Promise.all([
+    orvel.listConversations(agentId),
+    orvel.listTeachings(agentId),
+    orvel.listEvals(agentId),
+    orvel.listEvalRuns(agentId),
+    orvel.listKnowledge(agentId),
+    tab === 'playground' && agent.brain.provider === 'ollama'
+      ? getOllamaAvailability()
+      : Promise.resolve(undefined),
+    tab === 'settings' ? getProviderAvailability() : Promise.resolve(undefined),
+  ])
   const conversation =
     conversations.find((item) => item.id === parameters.conversation) ??
     conversations[0]
   const messages = conversation ? await orvel.listMessages(conversation.id) : []
+  const conversationTitles = await Promise.all(
+    conversations.map(async (conversationItem) => {
+      const conversationMessages = await orvel.listMessages(conversationItem.id)
+      const firstUserMessage = conversationMessages.find(
+        (message) => message.role === 'user',
+      )
+      const title = firstUserMessage?.content.replace(/\s+/g, ' ').trim()
+      return {
+        id: conversationItem.id,
+        label:
+          conversationItem.title ??
+          (title
+            ? title.length > 38
+              ? `${title.slice(0, 37)}…`
+              : title
+            : 'New conversation'),
+        updatedAt: time(conversationItem.updatedAt),
+      }
+    }),
+  )
   const navigationAgents: StudioNavigationAgent[] = allAgents.map((item) => ({
     id: item.id,
     name: item.name,
@@ -77,10 +116,7 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
     model: item.brain.model,
     ...(item.id === agentId
       ? {
-          conversations: conversations.map((conversationItem) => ({
-            id: conversationItem.id,
-            label: time(conversationItem.updatedAt),
-          })),
+          conversations: conversationTitles,
         }
       : {}),
   }))
@@ -107,7 +143,7 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
             <div className="model-chip">
               {agent.brain.provider} · {agent.brain.model}
             </div>
-            {tab === 'chat' ? (
+            {tab === 'playground' ? (
               <form action={startConversationAction}>
                 <input type="hidden" name="agentId" value={agentId} />
                 <button className="button button-primary" type="submit">
@@ -129,7 +165,82 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
           </p>
         ) : null}
 
-        {tab === 'chat' ? (
+        {tab === 'overview' ? (
+          <section className="agent-overview">
+            <article className="panel overview-summary">
+              <div>
+                <p className="eyebrow">Agent overview</p>
+                <h2>{agent.description || 'No purpose added yet'}</h2>
+                <p>
+                  {agent.brain.provider === 'ollama'
+                    ? 'Local runtime'
+                    : 'Cloud provider configuration'}{' '}
+                  · {agent.brain.provider} · {agent.brain.model}
+                </p>
+              </div>
+              <div className="overview-actions">
+                <Link
+                  className="button button-primary"
+                  href={`/agents/${agentId}?tab=playground`}
+                >
+                  Open Playground
+                </Link>
+                <Link
+                  className="button button-quiet"
+                  href={`/agents/${agentId}?tab=settings`}
+                >
+                  Edit configuration
+                </Link>
+              </div>
+            </article>
+            <div className="overview-columns">
+              <article className="panel">
+                <p className="eyebrow">Behavior</p>
+                <h2>Instructions</h2>
+                <p className="overview-preview">{agent.instructions}</p>
+                <Link
+                  className="text-link"
+                  href={`/agents/${agentId}?tab=settings`}
+                >
+                  Edit instructions
+                </Link>
+              </article>
+              <article className="panel">
+                <p className="eyebrow">Knowledge</p>
+                <h2>
+                  {knowledge.length} text source
+                  {knowledge.length === 1 ? '' : 's'}
+                </h2>
+                <p>
+                  {agent.generalKnowledge?.trim()
+                    ? 'Quick facts are configured.'
+                    : 'No quick facts configured.'}
+                </p>
+                <Link
+                  className="text-link"
+                  href={`/agents/${agentId}?tab=knowledge`}
+                >
+                  Manage knowledge
+                </Link>
+              </article>
+              <article className="panel">
+                <p className="eyebrow">Testing</p>
+                <h2>
+                  {evals.length} eval{evals.length === 1 ? '' : 's'}
+                </h2>
+                <p>Repeatable expected-text checks for this agent.</p>
+                <Link
+                  className="text-link"
+                  href={`/agents/${agentId}?tab=evals`}
+                >
+                  Open evals
+                </Link>
+              </article>
+            </div>
+          </section>
+        ) : null}
+
+        {tab === 'playground' ? (
           <section className="workspace-grid">
             <div className="chat-panel">
               {!isProviderConfigured(agent.brain.provider) ? (
@@ -161,7 +272,7 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
                 <div className="empty-chat">
                   <h2>Ready when you are</h2>
                   <p>
-                    Create a conversation, then ask SupportBot about refunds.
+                    Create a conversation, then try a question for this agent.
                   </p>
                 </div>
               ) : (
@@ -187,7 +298,7 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
                           {message.teachingIds?.length ? (
                             <small>
                               Used {message.teachingIds.length} relevant
-                              teaching example
+                              feedback example
                               {message.teachingIds.length === 1 ? '' : 's'}.
                             </small>
                           ) : null}
@@ -242,6 +353,82 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
                               </form>
                             </details>
                           ) : null}
+                          {message.role === 'assistant' && message.execution ? (
+                            <details className="execution-inspector">
+                              <summary>Inspect run</summary>
+                              <dl>
+                                <div>
+                                  <dt>Provider</dt>
+                                  <dd>{message.execution.provider}</dd>
+                                </div>
+                                <div>
+                                  <dt>Model</dt>
+                                  <dd>{message.execution.model}</dd>
+                                </div>
+                                <div>
+                                  <dt>Runtime</dt>
+                                  <dd>
+                                    {message.execution.durationMs.toLocaleString()}{' '}
+                                    ms
+                                  </dd>
+                                </div>
+                                {message.execution.usage?.inputTokens !==
+                                undefined ? (
+                                  <div>
+                                    <dt>Input tokens</dt>
+                                    <dd>
+                                      {message.execution.usage.inputTokens.toLocaleString()}
+                                    </dd>
+                                  </div>
+                                ) : null}
+                                {message.execution.usage?.outputTokens !==
+                                undefined ? (
+                                  <div>
+                                    <dt>Output tokens</dt>
+                                    <dd>
+                                      {message.execution.usage.outputTokens.toLocaleString()}
+                                    </dd>
+                                  </div>
+                                ) : null}
+                                <div>
+                                  <dt>Quick facts</dt>
+                                  <dd>
+                                    {message.execution.usedQuickFacts
+                                      ? 'Included'
+                                      : 'None'}
+                                  </dd>
+                                </div>
+                                <div className="execution-context">
+                                  <dt>Knowledge sources</dt>
+                                  <dd>
+                                    {message.execution.knowledgeSources.length
+                                      ? message.execution.knowledgeSources.map(
+                                          (source) => (
+                                            <span key={source.id}>
+                                              {source.title}
+                                            </span>
+                                          ),
+                                        )
+                                      : 'None selected'}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt>Feedback examples</dt>
+                                  <dd>
+                                    {message.execution.feedbackExamples.length
+                                      ? message.execution.feedbackExamples.map(
+                                          (example) => (
+                                            <span key={example.id}>
+                                              {example.userInput}
+                                            </span>
+                                          ),
+                                        )
+                                      : 'None selected'}
+                                  </dd>
+                                </div>
+                              </dl>
+                            </details>
+                          ) : null}
                         </article>
                       )
                     })}
@@ -273,7 +460,7 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
         ) : null}
 
         {tab === 'settings' ? (
-          <section className="panel">
+          <section className="panel agent-settings-stack">
             <form action={updateAgentAction} className="form-stack agent-form">
               <div>
                 <p className="eyebrow">Agent configuration</p>
@@ -302,24 +489,11 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
                   rows={8}
                 />
               </label>
-              <div className="form-row">
-                <label>
-                  Provider
-                  <select name="provider" defaultValue={agent.brain.provider}>
-                    <option value="ollama">Ollama · Local</option>
-                    <option value="groq">Groq · Cloud</option>
-                    <option value="openai">OpenAI · Cloud</option>
-                  </select>
-                </label>
-                <label>
-                  Model
-                  <input
-                    name="model"
-                    defaultValue={agent.brain.model}
-                    required
-                  />
-                </label>
-              </div>
+              <ModelSelector
+                options={providerOptions as ProviderModelOptions}
+                initialProvider={agent.brain.provider}
+                initialModel={agent.brain.model}
+              />
               <label>
                 Visibility
                 <select
@@ -334,6 +508,7 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
               </label>
               <button type="submit">Save changes</button>
             </form>
+            <DeleteAgentControl agentId={agentId} />
           </section>
         ) : null}
 
@@ -341,12 +516,12 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
           <section className="panel teachings-panel">
             <div>
               <p className="eyebrow">Saved corrections</p>
-              <h2>Teachings</h2>
-              <p>Only relevant teachings are retrieved for a later question.</p>
+              <h2>Feedback</h2>
+              <p>Relevant corrections are selected for future responses.</p>
             </div>
             {teachings.length === 0 ? (
               <p className="empty-state">
-                No teachings saved yet. Use Teach on an assistant response.
+                No feedback saved yet. Use Teach on an assistant response.
               </p>
             ) : null}
             {teachings.map((teaching) => (
@@ -377,36 +552,138 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
         ) : null}
 
         {tab === 'knowledge' ? (
-          <section className="panel">
-            <form action={updateGeneralKnowledgeAction} className="form-stack">
+          <section className="knowledge-layout">
+            <div className="panel form-stack">
               <div>
-                <p className="eyebrow">Creator-provided facts</p>
-                <h2>General Knowledge</h2>
+                <p className="eyebrow">Agent sources</p>
+                <h2>Knowledge</h2>
                 <p>
-                  Facts this agent should know from the start. This is distinct
-                  from instructions and saved teaching examples.
+                  Save reference text for retrieval, or keep links organized
+                  with the agent. Linked page content is not fetched yet.
                 </p>
+              </div>
+              {knowledge.length === 0 ? (
+                <p className="empty-state">
+                  No knowledge sources yet. Add retrievable text or save a link
+                  for reference.
+                </p>
+              ) : (
+                knowledge.map((entry) => (
+                  <article className="knowledge-entry" key={entry.id}>
+                    <div>
+                      <strong>{entry.title}</strong>
+                      <small>
+                        {entry.sourceUrl
+                          ? 'Link · saved for reference'
+                          : `Text · ${entry.content.length.toLocaleString()} characters`}
+                      </small>
+                      {entry.sourceUrl ? (
+                        <p>
+                          <a
+                            href={entry.sourceUrl}
+                            rel="noopener noreferrer"
+                            target="_blank"
+                          >
+                            {entry.sourceUrl}
+                          </a>
+                        </p>
+                      ) : (
+                        <p>{entry.content}</p>
+                      )}
+                    </div>
+                    <form action={deleteKnowledgeAction}>
+                      <input type="hidden" name="agentId" value={agentId} />
+                      <input
+                        type="hidden"
+                        name="knowledgeId"
+                        value={entry.id}
+                      />
+                      <button className="text-button" type="submit">
+                        Remove
+                      </button>
+                    </form>
+                  </article>
+                ))
+              )}
+              <form
+                action={addKnowledgeTextAction}
+                className="form-stack knowledge-add-form"
+              >
+                <input type="hidden" name="agentId" value={agentId} />
+                <label>
+                  Source title
+                  <input
+                    name="title"
+                    placeholder="Refund policy"
+                    required
+                    maxLength={120}
+                  />
+                </label>
+                <label>
+                  Text
+                  <textarea
+                    name="content"
+                    rows={6}
+                    maxLength={20000}
+                    required
+                    placeholder="Paste the information your agent should reference…"
+                  />
+                  <small>
+                    Up to 20,000 characters. Relevant text is selected for each
+                    conversation.
+                  </small>
+                </label>
+                <button type="submit">Add text source</button>
+              </form>
+              <form
+                action={addKnowledgeUrlAction}
+                className="form-stack knowledge-add-form"
+              >
+                <input type="hidden" name="agentId" value={agentId} />
+                <label>
+                  Add link
+                  <input
+                    name="url"
+                    type="url"
+                    placeholder="https://docs.example.com/returns"
+                    required
+                    maxLength={2000}
+                  />
+                  <small>
+                    Link is saved for reference. Studio does not fetch its page
+                    content yet.
+                  </small>
+                </label>
+                <button type="submit">Save link</button>
+              </form>
+            </div>
+            <form
+              action={updateGeneralKnowledgeAction}
+              className="panel form-stack"
+            >
+              <div>
+                <p className="eyebrow">Quick facts</p>
+                <h2>General knowledge</h2>
+                <p>Short baseline facts included with every response.</p>
               </div>
               <input type="hidden" name="agentId" value={agentId} />
               <label>
-                General Knowledge — Recommended <span>optional</span>
+                Facts <span>optional</span>
                 <textarea
                   name="generalKnowledge"
-                  rows={10}
+                  rows={8}
                   maxLength={10000}
                   defaultValue={agent.generalKnowledge ?? ''}
                   placeholder={
-                    'Delivery takes 5–7 business days.\nReturns are accepted within 14 days.\nWe deliver throughout Nigeria.'
+                    'Delivery takes 5–7 business days.\nReturns are accepted within 14 days.'
                   }
                 />
                 <small>
-                  Add information this agent should know about your business,
-                  product, or topic.{' '}
                   {(agent.generalKnowledge?.length ?? 0).toLocaleString()} /
                   10,000 characters
                 </small>
               </label>
-              <button type="submit">Save General Knowledge</button>
+              <button type="submit">Save quick facts</button>
             </form>
           </section>
         ) : null}

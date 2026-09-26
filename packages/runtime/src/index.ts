@@ -47,6 +47,7 @@ export interface UpdateAgentInput {
 export interface Conversation {
   readonly id: string
   readonly agentId: string
+  readonly title?: string
   readonly createdAt: Date
   readonly updatedAt: Date
 }
@@ -56,6 +57,23 @@ export interface ConversationMessage extends AgentMessage {
   readonly conversationId: string
   readonly createdAt: Date
   readonly teachingIds?: readonly string[]
+  readonly execution?: MessageExecution
+}
+
+export interface MessageExecution {
+  readonly provider: string
+  readonly model: string
+  readonly durationMs: number
+  readonly usage?: ModelUsage
+  readonly knowledgeSources: readonly {
+    readonly id: string
+    readonly title: string
+  }[]
+  readonly feedbackExamples: readonly {
+    readonly id: string
+    readonly userInput: string
+  }[]
+  readonly usedQuickFacts: boolean
 }
 
 export interface ModelUsage {
@@ -85,8 +103,22 @@ export interface ModelResponse {
   readonly usage?: ModelUsage
 }
 
+export interface ModelInfo {
+  readonly id: string
+}
+
+export interface ProviderCapabilities {
+  readonly modelDiscovery?: boolean
+  readonly streaming?: boolean
+  readonly tools?: boolean
+  readonly vision?: boolean
+  readonly structuredOutput?: boolean
+}
+
 export interface ModelProvider {
   readonly id: string
+  readonly capabilities?: ProviderCapabilities
+  listModels?(): Promise<readonly ModelInfo[]>
   generate(request: ModelRequest): Promise<ModelResponse>
 }
 
@@ -112,12 +144,15 @@ export interface RuntimeOptions {
 export interface AgentRepository {
   createAgent(agent: AgentDefinition): Promise<void>
   updateAgent?(agent: AgentDefinition): Promise<void>
+  deleteAgent?(id: string): Promise<void>
   getAgent(id: string): Promise<AgentDefinition | undefined>
   listAgents(): Promise<readonly AgentDefinition[]>
 }
 
 export interface ConversationRepository {
   createConversation(conversation: Conversation): Promise<void>
+  updateConversation?(conversation: Conversation): Promise<void>
+  deleteConversation?(id: string): Promise<void>
   getConversation(id: string): Promise<Conversation | undefined>
   listConversations(agentId: string): Promise<readonly Conversation[]>
   appendMessage(message: ConversationMessage): Promise<void>

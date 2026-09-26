@@ -1,5 +1,6 @@
 import type {
   AgentMessage,
+  ModelInfo,
   ModelProvider,
   ModelRequest,
   ModelResponse,
@@ -97,6 +98,20 @@ export function createOllamaProvider({
 }: OllamaProviderOptions = {}): ModelProvider {
   return {
     id: 'ollama',
+    capabilities: {
+      modelDiscovery: true,
+      streaming: false,
+      tools: false,
+      vision: false,
+      structuredOutput: false,
+    },
+    async listModels(): Promise<readonly ModelInfo[]> {
+      const models = await listOllamaModels({
+        baseUrl,
+        fetch: fetchImplementation,
+      })
+      return models.map((id) => ({ id }))
+    },
     async generate(request: ModelRequest): Promise<ModelResponse> {
       let response: Response
       try {

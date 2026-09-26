@@ -55,6 +55,49 @@ export async function updateGeneralKnowledgeAction(
   )
 }
 
+export async function addKnowledgeTextAction(
+  formData: FormData,
+): Promise<void> {
+  const agentId = value(formData, 'agentId')
+  try {
+    await orvel.addKnowledgeText({
+      agentId,
+      title: value(formData, 'title'),
+      content: value(formData, 'content'),
+    })
+  } catch (error) {
+    withMessage(`/agents/${agentId}?tab=knowledge`, error)
+  }
+  revalidatePath(`/agents/${agentId}`)
+  redirect(`/agents/${agentId}?tab=knowledge&notice=Knowledge%20added`)
+}
+
+export async function addKnowledgeUrlAction(formData: FormData): Promise<void> {
+  const agentId = value(formData, 'agentId')
+  try {
+    await orvel.addKnowledgeLink({
+      agentId,
+      url: value(formData, 'url'),
+    })
+  } catch (error) {
+    withMessage(`/agents/${agentId}?tab=knowledge`, error)
+  }
+  revalidatePath(`/agents/${agentId}`)
+  redirect(`/agents/${agentId}?tab=knowledge&notice=Link%20saved`)
+}
+
+export async function deleteKnowledgeAction(formData: FormData): Promise<void> {
+  const agentId = value(formData, 'agentId')
+  try {
+    const knowledgeId = value(formData, 'knowledgeId')
+    await orvel.deleteKnowledge(knowledgeId, agentId)
+  } catch (error) {
+    withMessage(`/agents/${agentId}?tab=knowledge`, error)
+  }
+  revalidatePath(`/agents/${agentId}`)
+  redirect(`/agents/${agentId}?tab=knowledge&notice=Knowledge%20deleted`)
+}
+
 export async function updateAgentAction(formData: FormData): Promise<void> {
   const agentId = value(formData, 'agentId')
   try {
@@ -66,8 +109,7 @@ export async function updateAgentAction(formData: FormData): Promise<void> {
         provider: value(formData, 'provider'),
         model: value(formData, 'model'),
       },
-      visibility:
-        value(formData, 'visibility') === 'public' ? 'public' : 'private',
+      visibility: 'private',
     })
   } catch (error) {
     withMessage(`/agents/${agentId}?tab=settings`, error)
@@ -75,6 +117,18 @@ export async function updateAgentAction(formData: FormData): Promise<void> {
   revalidatePath('/')
   revalidatePath(`/agents/${agentId}`)
   redirect(`/agents/${agentId}?tab=settings&notice=Agent%20saved`)
+}
+
+export async function deleteAgentAction(formData: FormData): Promise<void> {
+  const agentId = value(formData, 'agentId')
+  try {
+    await orvel.deleteAgent(agentId)
+  } catch (error) {
+    withMessage(`/agents/${agentId}?tab=settings`, error)
+  }
+  revalidatePath('/')
+  revalidatePath(`/agents/${agentId}`)
+  redirect('/?view=agents')
 }
 
 export async function startConversationAction(
@@ -88,13 +142,56 @@ export async function startConversationAction(
     withMessage(`/agents/${agentId}`, error)
   }
   revalidatePath(`/agents/${agentId}`)
-  redirect(`/agents/${agentId}?conversation=${conversation.id}`)
+  redirect(`/agents/${agentId}?tab=playground&conversation=${conversation.id}`)
+}
+
+export async function deleteConversationAction(
+  formData: FormData,
+): Promise<void> {
+  const agentId = value(formData, 'agentId')
+  const conversationId = value(formData, 'conversationId')
+  try {
+    await orvel.deleteConversation(conversationId, agentId)
+  } catch (error) {
+    withMessage(`/agents/${agentId}?tab=playground`, error)
+  }
+  revalidatePath(`/agents/${agentId}`)
+  const remaining = await orvel.listConversations(agentId)
+  const next = remaining[0]
+  redirect(
+    next
+      ? `/agents/${agentId}?tab=playground&conversation=${next.id}`
+      : `/agents/${agentId}?tab=playground&notice=Conversation%20deleted`,
+  )
+}
+
+export async function renameConversationAction(
+  formData: FormData,
+): Promise<void> {
+  const agentId = value(formData, 'agentId')
+  const conversationId = value(formData, 'conversationId')
+  try {
+    await orvel.renameConversation(
+      conversationId,
+      agentId,
+      value(formData, 'title'),
+    )
+  } catch (error) {
+    withMessage(
+      `/agents/${agentId}?tab=playground&conversation=${conversationId}`,
+      error,
+    )
+  }
+  revalidatePath(`/agents/${agentId}`)
+  redirect(
+    `/agents/${agentId}?tab=playground&conversation=${conversationId}&notice=Conversation%20renamed`,
+  )
 }
 
 export async function sendMessageAction(formData: FormData): Promise<void> {
   const agentId = value(formData, 'agentId')
   const conversationId = value(formData, 'conversationId')
-  const destination = `/agents/${agentId}?conversation=${conversationId}`
+  const destination = `/agents/${agentId}?tab=playground&conversation=${conversationId}`
   try {
     await orvel.sendMessage({
       conversationId,
@@ -120,11 +217,14 @@ export async function saveTeachingAction(formData: FormData): Promise<void> {
       explanation: value(formData, 'explanation'),
     })
   } catch (error) {
-    withMessage(`/agents/${agentId}?conversation=${conversationId}`, error)
+    withMessage(
+      `/agents/${agentId}?tab=playground&conversation=${conversationId}`,
+      error,
+    )
   }
   revalidatePath(`/agents/${agentId}`)
   redirect(
-    `/agents/${agentId}?conversation=${conversationId}&notice=Teaching%20saved`,
+    `/agents/${agentId}?tab=playground&conversation=${conversationId}&notice=Teaching%20saved`,
   )
 }
 

@@ -2,17 +2,22 @@ import Link from 'next/link'
 
 import { AgentForm } from './agent-form'
 import { Icon, StudioShell, type StudioNavigationAgent } from './studio-shell'
-import { getOllamaAvailability, isProviderConfigured, orvel } from './lib/orvel'
+import {
+  getOllamaAvailability,
+  getProviderAvailability,
+  isProviderConfigured,
+  orvel,
+} from './lib/orvel'
+import type { ProviderModelOptions } from './model-selector'
 
 type PageProps = {
   searchParams: Promise<{ error?: string; view?: string }>
 }
 
 export default async function Home({ searchParams }: PageProps) {
-  const [agents, parameters, ollama] = await Promise.all([
+  const [agents, parameters] = await Promise.all([
     orvel.listAgents(),
     searchParams,
-    getOllamaAvailability(),
   ])
   const navigationAgents: StudioNavigationAgent[] = agents.map((agent) => ({
     id: agent.id,
@@ -23,6 +28,10 @@ export default async function Home({ searchParams }: PageProps) {
   const view = ['agents', 'create', 'settings'].includes(parameters.view ?? '')
     ? parameters.view!
     : 'welcome'
+  const [ollama, providerOptions] = await Promise.all([
+    view === 'settings' ? getOllamaAvailability() : Promise.resolve(undefined),
+    view === 'create' ? getProviderAvailability() : Promise.resolve(undefined),
+  ])
 
   return (
     <StudioShell currentSection={view} agents={navigationAgents}>
@@ -131,8 +140,7 @@ export default async function Home({ searchParams }: PageProps) {
               </p>
             ) : null}
             <AgentForm
-              ollamaModels={ollama.available ? ollama.models : []}
-              {...(!ollama.available ? { ollamaError: ollama.error } : {})}
+              providerOptions={providerOptions as ProviderModelOptions}
             />
           </>
         ) : null}
@@ -157,10 +165,10 @@ export default async function Home({ searchParams }: PageProps) {
                   </p>
                   <small
                     className={
-                      ollama.available ? 'status-ready' : 'status-offline'
+                      ollama?.available ? 'status-ready' : 'status-offline'
                     }
                   >
-                    {ollama.available
+                    {ollama?.available
                       ? `${ollama.models.length} model${ollama.models.length === 1 ? '' : 's'} available`
                       : 'Not available'}
                   </small>

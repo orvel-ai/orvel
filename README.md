@@ -8,10 +8,12 @@ together prompts and tools and more like teaching something how to think and
 work.
 
 > [!IMPORTANT]
-> Orvel v0.1 implements a local-first teaching loop: create an agent, chat,
-> save a correction, retrieve relevant corrections for later questions, and run
-> a simple deterministic eval. It is not model fine-tuning or a production-ready
-> agent platform, and its APIs will change.
+> Orvel v0.1 implements a local-first agent loop: create and configure agents,
+> chat in a playground, save text knowledge and corrections, retrieve relevant
+> context, and run a simple deterministic eval. Knowledge supports pasted text
+> for retrieval and saved external links for reference; files and link-content
+> ingestion are not implemented. It is not model fine-tuning or a
+> production-ready agent platform, and its APIs will change.
 
 ## Philosophy
 

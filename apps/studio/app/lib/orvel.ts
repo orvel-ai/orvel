@@ -8,7 +8,6 @@ import {
 import {
   createOllamaEmbeddingProvider,
   createOllamaProvider,
-  listOllamaModels,
 } from '@orvel/ollama'
 import { createOpenAIProvider } from '@orvel/openai'
 import {
@@ -25,12 +24,15 @@ const groqKey = process.env.GROQ_API_KEY
 const groqRelevanceModel = process.env.GROQ_RELEVANCE_MODEL
 const ollamaBaseUrl = process.env.OLLAMA_BASE_URL
 const ollamaEmbeddingModel = process.env.OLLAMA_EMBEDDING_MODEL
+const ollamaProvider = createOllamaProvider(
+  ollamaBaseUrl ? { baseUrl: ollamaBaseUrl } : {},
+)
+const groqProvider = createGroqProvider(groqKey ? { apiKey: groqKey } : {})
+const openAIProvider = createOpenAIProvider(
+  openAIKey ? { apiKey: openAIKey } : {},
+)
 const runtime = createRuntime({
-  providers: [
-    createOllamaProvider(ollamaBaseUrl ? { baseUrl: ollamaBaseUrl } : {}),
-    createGroqProvider(groqKey ? { apiKey: groqKey } : {}),
-    createOpenAIProvider(openAIKey ? { apiKey: openAIKey } : {}),
-  ],
+  providers: [ollamaProvider, groqProvider, openAIProvider],
 })
 
 const embeddingProvider = ollamaEmbeddingModel
@@ -69,14 +71,68 @@ export async function getOllamaAvailability(): Promise<OllamaAvailability> {
   try {
     return {
       available: true,
-      models: await listOllamaModels(
-        ollamaBaseUrl ? { baseUrl: ollamaBaseUrl } : {},
-      ),
+      models:
+        (await ollamaProvider.listModels?.())?.map((model) => model.id) ?? [],
     }
   } catch (error) {
     return {
       available: false,
       error: error instanceof Error ? error.message : 'Could not reach Ollama.',
+    }
+  }
+}
+
+export type ProviderAvailability = {
+  readonly configured: boolean
+  readonly models: readonly string[]
+  readonly error?: string
+}
+
+export async function getProviderAvailability(): Promise<{
+  readonly ollama: ProviderAvailability
+  readonly groq: ProviderAvailability
+  readonly openai: ProviderAvailability
+}> {
+  const [ollama, groq, openai] = await Promise.all([
+    getOllamaAvailability(),
+    listProviderModels(groqProvider, Boolean(groqKey), 'Groq'),
+    listProviderModels(openAIProvider, Boolean(openAIKey), 'OpenAI'),
+  ])
+
+  return {
+    ollama: {
+      configured: ollama.available,
+      models: ollama.available ? ollama.models : [],
+      ...(!ollama.available ? { error: ollama.error } : {}),
+    },
+    groq,
+    openai,
+  }
+}
+
+async function listProviderModels(
+  provider: typeof groqProvider,
+  configured: boolean,
+  label: string,
+): Promise<ProviderAvailability> {
+  if (!configured) {
+    return {
+      configured: false,
+      models: [],
+      error: `${label} is not configured in this Studio workspace.`,
+    }
+  }
+  try {
+    const models = await provider.listModels?.()
+    return { configured: true, models: models?.map((model) => model.id) ?? [] }
+  } catch (error) {
+    return {
+      configured: true,
+      models: [],
+      error:
+        error instanceof Error
+          ? error.message
+          : `Could not list ${label} models.`,
     }
   }
 }

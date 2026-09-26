@@ -1,5 +1,6 @@
 import type {
   AgentMessage,
+  ModelInfo,
   ModelProvider,
   ModelRequest,
   ModelResponse,
@@ -21,6 +22,14 @@ export interface GroqSemanticRelevanceProviderOptions extends GroqProviderOption
 }
 
 interface GroqResponse {
+  readonly data?: readonly {
+    readonly id?: string
+    readonly active?: boolean
+    readonly architecture?: {
+      readonly input_modalities?: readonly string[]
+      readonly output_modalities?: readonly string[]
+    }
+  }[]
   readonly choices?: readonly {
     readonly message?: { readonly content?: string | null }
   }[]
@@ -85,6 +94,53 @@ export function createGroqProvider({
 }: GroqProviderOptions): ModelProvider {
   return {
     id: 'groq',
+    capabilities: {
+      modelDiscovery: true,
+      streaming: false,
+      tools: false,
+      vision: false,
+      structuredOutput: false,
+    },
+    async listModels(): Promise<readonly ModelInfo[]> {
+      if (!apiKey) {
+        throw new Error('Groq is not configured for model discovery.')
+      }
+      let response: Response
+      try {
+        response = await fetchImplementation(
+          `${baseUrl.replace(/\/$/, '')}/models`,
+          { headers: { Authorization: `Bearer ${apiKey}` } },
+        )
+      } catch {
+        throw new Error('Could not reach Groq to list models.')
+      }
+      const payload = await readJson(response)
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Groq rejected the configured credentials.')
+        }
+        throw new Error(
+          `Groq model listing failed with status ${response.status}.`,
+        )
+      }
+      if (!Array.isArray(payload.data)) {
+        throw new Error('Groq returned a malformed model list.')
+      }
+      return payload.data
+        .filter(
+          (model) =>
+            model.active !== false &&
+            (!model.architecture?.input_modalities ||
+              model.architecture.input_modalities.includes('text')) &&
+            (!model.architecture?.output_modalities ||
+              model.architecture.output_modalities.includes('text')) &&
+            !/whisper|embed/i.test(model.id ?? ''),
+        )
+        .map((model) => model.id?.trim())
+        .filter((id): id is string => Boolean(id))
+        .sort((left, right) => left.localeCompare(right))
+        .map((id) => ({ id }))
+    },
     async generate(request: ModelRequest): Promise<ModelResponse> {
       if (!apiKey) {
         throw new Error(
