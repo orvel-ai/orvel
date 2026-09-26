@@ -26,14 +26,26 @@ import {
   type TeachingRepository,
   type TeachingRetriever,
 } from '@orvel/training'
+import {
+  KNOWLEDGE_TEXT_MAX_LENGTH,
+  KNOWLEDGE_LINK_MAX_LENGTH,
+  type KnowledgeEntry,
+  type KnowledgeRepository,
+  type KnowledgeTextInput,
+  type KnowledgeLinkInput,
+} from '@orvel/knowledge'
 
 export * from '@orvel/evals'
 export * from '@orvel/runtime'
 export * from '@orvel/training'
 export type {
+  KnowledgeEntry,
   KnowledgeChunk,
   KnowledgeQuery,
+  KnowledgeRepository,
   KnowledgeSource,
+  KnowledgeTextInput,
+  KnowledgeLinkInput,
 } from '@orvel/knowledge'
 export type { MemoryQuery, MemoryRecord, MemoryStore } from '@orvel/memory'
 export type { Skill, SkillContext } from '@orvel/skills'
@@ -43,7 +55,8 @@ export interface OrvelStore
     AgentRepository,
     ConversationRepository,
     TeachingRepository,
-    EvalRepository {}
+    EvalRepository,
+    Partial<KnowledgeRepository> {}
 
 export interface OrvelClientOptions {
   readonly store: OrvelStore
@@ -70,9 +83,12 @@ export interface RunEvalResult {
 export interface OrvelClient {
   createAgent(input: CreateAgentInput): Promise<AgentDefinition>
   updateAgent(id: string, input: UpdateAgentInput): Promise<AgentDefinition>
+  deleteAgent(id: string): Promise<void>
   getAgent(id: string): Promise<AgentDefinition | undefined>
   listAgents(): Promise<readonly AgentDefinition[]>
   createConversation(agentId: string): Promise<Conversation>
+  deleteConversation(id: string, agentId: string): Promise<void>
+  renameConversation(id: string, agentId: string, title: string): Promise<void>
   getConversation(id: string): Promise<Conversation | undefined>
   listConversations(agentId: string): Promise<readonly Conversation[]>
   listMessages(conversationId: string): Promise<readonly ConversationMessage[]>
@@ -88,6 +104,10 @@ export interface OrvelClient {
   listEvals(agentId: string): Promise<readonly EvalCase[]>
   runEval(evalId: string): Promise<RunEvalResult>
   listEvalRuns(agentId: string): Promise<readonly EvalRun[]>
+  addKnowledgeText(input: KnowledgeTextInput): Promise<KnowledgeEntry>
+  addKnowledgeLink(input: KnowledgeLinkInput): Promise<KnowledgeEntry>
+  listKnowledge(agentId: string): Promise<readonly KnowledgeEntry[]>
+  deleteKnowledge(id: string, agentId: string): Promise<void>
 }
 
 export function createOrvelClient({
@@ -113,11 +133,52 @@ export function createOrvelClient({
     const matches = latestUserMessage
       ? await teachingRetriever.retrieve(agent.id, latestUserMessage.content)
       : []
+    const knowledge =
+      latestUserMessage && store.listKnowledgeEntries
+        ? await store.listKnowledgeEntries(agent.id)
+        : []
+    const queryTerms = new Set(
+      latestUserMessage?.content.toLowerCase().match(/[\p{L}\p{N}]{3,}/gu) ??
+        [],
+    )
+    const relevantKnowledge = knowledge
+      .map((entry) => ({
+        entry,
+        score:
+          (entry.title + ' ' + entry.content)
+            .toLowerCase()
+            .match(/[\p{L}\p{N}]{3,}/gu)
+            ?.filter((term) => queryTerms.has(term)).length ?? 0,
+      }))
+      .filter((match) => match.score > 0)
+      .sort((left, right) => right.score - left.score)
+      .slice(0, 3)
+    const startedAt = Date.now()
     const result = await runtime.run(agent, {
       messages,
-      context: createTeachingContext(matches),
+      context: [
+        ...relevantKnowledge.map(({ entry }) => ({
+          id: entry.id,
+          label: `Knowledge: ${entry.title}`,
+          content: entry.content,
+        })),
+        ...createTeachingContext(matches),
+      ],
     })
-    return { result, teachingIds: matches.map((match) => match.teaching.id) }
+    return {
+      result,
+      teachingIds: matches.map((match) => match.teaching.id),
+      knowledgeSources: relevantKnowledge.map(({ entry }) => ({
+        id: entry.id,
+        title: entry.title,
+      })),
+      feedbackExamples: matches.map(({ teaching }) => ({
+        id: teaching.id,
+        userInput: teaching.userInput,
+      })),
+      durationMs: Date.now() - startedAt,
+      usedQuickFacts: Boolean(agent.generalKnowledge?.trim()),
+    }
   }
 
   return {
@@ -135,6 +196,13 @@ export function createOrvelClient({
       await store.updateAgent(agent)
       return agent
     },
+    async deleteAgent(id) {
+      await requireAgent(id)
+      if (!store.deleteAgent) {
+        throw new Error('This store does not support deleting agents.')
+      }
+      await store.deleteAgent(id)
+    },
     getAgent: (id) => store.getAgent(id),
     listAgents: () => store.listAgents(),
     async createConversation(agentId) {
@@ -148,6 +216,36 @@ export function createOrvelClient({
       }
       await store.createConversation(conversation)
       return conversation
+    },
+    async deleteConversation(id, agentId) {
+      await requireAgent(agentId)
+      if (!store.deleteConversation) {
+        throw new Error('This store does not support deleting conversations.')
+      }
+      const conversation = await store.getConversation(id)
+      if (!conversation || conversation.agentId !== agentId) {
+        throw new Error('Conversation not found for this agent.')
+      }
+      await store.deleteConversation(id)
+    },
+    async renameConversation(id, agentId, title) {
+      await requireAgent(agentId)
+      if (!store.updateConversation) {
+        throw new Error('This store does not support renaming conversations.')
+      }
+      const conversation = await store.getConversation(id)
+      if (!conversation || conversation.agentId !== agentId) {
+        throw new Error('Conversation not found for this agent.')
+      }
+      const normalizedTitle = title.trim()
+      if (!normalizedTitle) throw new Error('A conversation title is required.')
+      if (normalizedTitle.length > 120) {
+        throw new Error('Conversation titles cannot exceed 120 characters.')
+      }
+      await store.updateConversation({
+        ...conversation,
+        title: normalizedTitle,
+      })
     },
     getConversation: (id) => store.getConversation(id),
     listConversations: (agentId) => store.listConversations(agentId),
@@ -169,13 +267,29 @@ export function createOrvelClient({
       await store.appendMessage(userMessage)
 
       const history = await store.listMessages(conversationId)
-      const { result, teachingIds } = await runForAgent(agent, history)
+      const {
+        result,
+        teachingIds,
+        knowledgeSources,
+        feedbackExamples,
+        durationMs,
+        usedQuickFacts,
+      } = await runForAgent(agent, history)
       const assistantMessage: ConversationMessage = {
         id: createId(),
         conversationId,
         role: 'assistant',
         content: result.response.content,
         ...(teachingIds.length > 0 ? { teachingIds } : {}),
+        execution: {
+          provider: agent.brain.provider,
+          model: result.response.model ?? agent.brain.model,
+          durationMs,
+          ...(result.response.usage ? { usage: result.response.usage } : {}),
+          knowledgeSources,
+          feedbackExamples,
+          usedQuickFacts,
+        },
         createdAt: now(),
       }
       await store.appendMessage(assistantMessage)
@@ -237,5 +351,74 @@ export function createOrvelClient({
       return { run }
     },
     listEvalRuns: (agentId) => store.listEvalRuns(agentId),
+    async addKnowledgeText(input) {
+      if (!store.createKnowledgeEntry) {
+        throw new Error('This store does not support agent knowledge yet.')
+      }
+      await requireAgent(input.agentId)
+      const title = input.title.trim()
+      const content = input.content.trim()
+      if (!title || !content) {
+        throw new Error('A title and knowledge text are required.')
+      }
+      if (content.length > KNOWLEDGE_TEXT_MAX_LENGTH) {
+        throw new Error('Knowledge text cannot exceed 20,000 characters.')
+      }
+      const entry: KnowledgeEntry = {
+        id: createId(),
+        agentId: input.agentId,
+        title,
+        content,
+        createdAt: now(),
+      }
+      await store.createKnowledgeEntry(entry)
+      return entry
+    },
+    async addKnowledgeLink(input) {
+      let url: URL
+      try {
+        url = new URL(input.url.trim())
+      } catch {
+        throw new Error('Enter a valid HTTP or HTTPS URL.')
+      }
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        throw new Error('Knowledge URLs must use HTTP or HTTPS.')
+      }
+      if (url.href.length > KNOWLEDGE_LINK_MAX_LENGTH) {
+        throw new Error('Knowledge URLs cannot exceed 2,000 characters.')
+      }
+      if (url.username || url.password) {
+        throw new Error('Knowledge URLs cannot include credentials.')
+      }
+      if (!store.createKnowledgeEntry) {
+        throw new Error('This store does not support agent knowledge yet.')
+      }
+      await requireAgent(input.agentId)
+      const entry: KnowledgeEntry = {
+        id: createId(),
+        agentId: input.agentId,
+        title: url.hostname + url.pathname.replace(/\/$/, ''),
+        content: '',
+        sourceUrl: url.href,
+        createdAt: now(),
+      }
+      await store.createKnowledgeEntry(entry)
+      return entry
+    },
+    async listKnowledge(agentId) {
+      if (!store.listKnowledgeEntries) return []
+      await requireAgent(agentId)
+      return store.listKnowledgeEntries(agentId)
+    },
+    async deleteKnowledge(id, agentId) {
+      if (!store.deleteKnowledgeEntry) {
+        throw new Error('This store does not support agent knowledge yet.')
+      }
+      const entries = await store.listKnowledgeEntries?.(agentId)
+      if (!entries?.some((entry) => entry.id === id)) {
+        throw new Error('Knowledge entry not found for this agent.')
+      }
+      await store.deleteKnowledgeEntry(id)
+    },
   }
 }

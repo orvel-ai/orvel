@@ -3,22 +3,24 @@
 import { useState } from 'react'
 
 import { createAgentAction } from './actions'
+import { ModelSelector, type ProviderModelOptions } from './model-selector'
 
 type AgentFormProps = {
-  readonly ollamaModels: readonly string[]
-  readonly ollamaError?: string
+  readonly providerOptions: ProviderModelOptions
 }
 
-export function AgentForm({ ollamaModels, ollamaError }: AgentFormProps) {
-  const [provider, setProvider] = useState('ollama')
+export function AgentForm({ providerOptions }: AgentFormProps) {
   const [generalKnowledge, setGeneralKnowledge] = useState('')
-  const isOllama = provider === 'ollama'
-  const isGroq = provider === 'groq'
-  const defaultModel = isOllama
-    ? (ollamaModels[0] ?? 'llama3.2:3b')
-    : isGroq
-      ? 'openai/gpt-oss-20b'
-      : 'gpt-4.1-mini'
+  const initialProvider = providerOptions.ollama.configured
+    ? 'ollama'
+    : providerOptions.groq.configured
+      ? 'groq'
+      : providerOptions.openai.configured
+        ? 'openai'
+        : 'ollama'
+  const initialModel =
+    providerOptions[initialProvider].models[0] ??
+    (initialProvider === 'ollama' ? 'llama3.2:3b' : '')
 
   return (
     <form action={createAgentAction} className="panel form-stack agent-form">
@@ -46,79 +48,41 @@ export function AgentForm({ ollamaModels, ollamaError }: AgentFormProps) {
           rows={5}
         />
       </label>
-      <label>
-        General Knowledge — Recommended <span>optional</span>
-        <textarea
-          name="generalKnowledge"
-          rows={6}
-          maxLength={10000}
-          value={generalKnowledge}
-          onChange={(event) => setGeneralKnowledge(event.target.value)}
-          placeholder={
-            'Delivery takes 5–7 business days.\nReturns are accepted within 14 days.\nWe deliver throughout Nigeria.'
-          }
-        />
-        <small>
-          Add information this agent should know about your business, product,
-          or topic. {generalKnowledge.length.toLocaleString()} / 10,000
-          characters
-        </small>
-      </label>
-      <div className="form-row">
+      <details className="advanced-fields">
+        <summary>Advanced configuration</summary>
         <label>
-          Provider
-          <select
-            name="provider"
-            value={provider}
-            onChange={(event) => setProvider(event.target.value)}
-          >
-            <option value="ollama">Ollama (Local)</option>
-            <option value="groq">Groq (Cloud)</option>
-            <option value="openai">OpenAI</option>
+          Knowledge notes <span>optional</span>
+          <textarea
+            name="generalKnowledge"
+            rows={4}
+            maxLength={10000}
+            value={generalKnowledge}
+            onChange={(event) => setGeneralKnowledge(event.target.value)}
+            placeholder={
+              'Delivery takes 5–7 business days.\nReturns are accepted within 14 days.'
+            }
+          />
+          <small>
+            Quick facts for this agent. File, text and URL sources can be added
+            later in Knowledge. {generalKnowledge.length.toLocaleString()} /
+            10,000 characters
+          </small>
+        </label>
+        <label>
+          Visibility
+          <select name="visibility" defaultValue="private">
+            <option value="private">Private — only in this workspace</option>
+            <option value="public" disabled>
+              Public — publishing is not available yet
+            </option>
           </select>
         </label>
-        <label>
-          Model
-          <input
-            key={provider}
-            name="model"
-            defaultValue={defaultModel}
-            list={isOllama && ollamaModels.length ? 'ollama-models' : undefined}
-            placeholder={
-              isOllama
-                ? 'e.g. llama3.2:3b'
-                : isGroq
-                  ? 'openai/gpt-oss-20b'
-                  : 'gpt-4.1-mini'
-            }
-            required
-          />
-          {isOllama && ollamaModels.length ? (
-            <datalist id="ollama-models">
-              {ollamaModels.map((model) => (
-                <option key={model} value={model} />
-              ))}
-            </datalist>
-          ) : null}
-        </label>
-      </div>
-      {isOllama ? (
-        <p className="provider-note">
-          Ollama runs locally and needs to be installed and running.
-          {ollamaError ? ` ${ollamaError}` : ' No API key is needed.'}
-        </p>
-      ) : isGroq ? (
-        <p className="provider-note">
-          Groq calls require <code>GROQ_API_KEY</code> in Studio&apos;s
-          server-side <code>.env.local</code>. Model availability and limits are
-          managed by Groq.
-        </p>
-      ) : (
-        <p className="provider-note">
-          OpenAI calls require <code>OPENAI_API_KEY</code> in Studio&apos;s
-          server-side <code>.env.local</code>.
-        </p>
-      )}
+      </details>
+      <ModelSelector
+        options={providerOptions}
+        initialProvider={initialProvider}
+        initialModel={initialModel}
+      />
       <button type="submit">Create agent</button>
     </form>
   )

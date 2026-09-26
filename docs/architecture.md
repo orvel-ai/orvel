@@ -37,6 +37,12 @@ OpenAI and Groq use server-supplied keys; Ollama uses its local HTTP API with no
 key. All implement `ModelProvider`; no provider package is imported by the
 runtime.
 
+Providers may also expose optional model discovery and capability metadata.
+Studio uses model discovery to offer provider-reported model IDs during agent
+creation and configuration. A saved model remains selectable when discovery is
+unavailable, and cloud providers without server-side credentials are marked as
+not connected.
+
 ## Focused packages
 
 - `@orvel/memory` defines how memories are stored and recalled.
@@ -48,8 +54,14 @@ runtime.
   embedding contract through its local API; the runtime remains unaware of it.
 - `@orvel/evals` defines cases, normalized results, and the v0.1 contains-text
   evaluator.
+- `@orvel/knowledge` also defines agent-scoped text entries. The SDK selects up
+  to three entries by lexical overlap with the latest user message and passes
+  them to the runtime as inspectable context. This initial path does not ingest
+  files or fetch URLs. Studio can save external links for reference, but they
+  are not indexed or included in agent context.
 - `@orvel/local` implements the repository contracts as atomic JSON-file
-  persistence for local development.
+  persistence for local development. Store version 1 is migrated in memory to
+  version 2 when read; the next write persists the added knowledge-entry list.
 
 `@orvel/sdk` composes repositories, retrieval, and the runtime into a reusable
 developer-facing client. Studio consumes that client from server components and

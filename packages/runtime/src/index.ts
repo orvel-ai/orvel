@@ -18,6 +18,7 @@ export interface AgentDefinition {
   readonly description?: string
   readonly instructions: string
   readonly generalKnowledge?: string
+  readonly visibility?: 'private' | 'public'
   readonly brain: ModelConfig
   readonly createdAt: Date
   readonly updatedAt: Date
@@ -30,6 +31,7 @@ export interface CreateAgentInput {
   readonly description?: string
   readonly instructions: string
   readonly generalKnowledge?: string
+  readonly visibility?: 'private' | 'public'
   readonly model: ModelConfig
 }
 
@@ -38,12 +40,14 @@ export interface UpdateAgentInput {
   readonly description?: string
   readonly instructions?: string
   readonly generalKnowledge?: string
+  readonly visibility?: 'private' | 'public'
   readonly model?: ModelConfig
 }
 
 export interface Conversation {
   readonly id: string
   readonly agentId: string
+  readonly title?: string
   readonly createdAt: Date
   readonly updatedAt: Date
 }
@@ -53,6 +57,23 @@ export interface ConversationMessage extends AgentMessage {
   readonly conversationId: string
   readonly createdAt: Date
   readonly teachingIds?: readonly string[]
+  readonly execution?: MessageExecution
+}
+
+export interface MessageExecution {
+  readonly provider: string
+  readonly model: string
+  readonly durationMs: number
+  readonly usage?: ModelUsage
+  readonly knowledgeSources: readonly {
+    readonly id: string
+    readonly title: string
+  }[]
+  readonly feedbackExamples: readonly {
+    readonly id: string
+    readonly userInput: string
+  }[]
+  readonly usedQuickFacts: boolean
 }
 
 export interface ModelUsage {
@@ -82,8 +103,22 @@ export interface ModelResponse {
   readonly usage?: ModelUsage
 }
 
+export interface ModelInfo {
+  readonly id: string
+}
+
+export interface ProviderCapabilities {
+  readonly modelDiscovery?: boolean
+  readonly streaming?: boolean
+  readonly tools?: boolean
+  readonly vision?: boolean
+  readonly structuredOutput?: boolean
+}
+
 export interface ModelProvider {
   readonly id: string
+  readonly capabilities?: ProviderCapabilities
+  listModels?(): Promise<readonly ModelInfo[]>
   generate(request: ModelRequest): Promise<ModelResponse>
 }
 
@@ -109,12 +144,15 @@ export interface RuntimeOptions {
 export interface AgentRepository {
   createAgent(agent: AgentDefinition): Promise<void>
   updateAgent?(agent: AgentDefinition): Promise<void>
+  deleteAgent?(id: string): Promise<void>
   getAgent(id: string): Promise<AgentDefinition | undefined>
   listAgents(): Promise<readonly AgentDefinition[]>
 }
 
 export interface ConversationRepository {
   createConversation(conversation: Conversation): Promise<void>
+  updateConversation?(conversation: Conversation): Promise<void>
+  deleteConversation?(id: string): Promise<void>
   getConversation(id: string): Promise<Conversation | undefined>
   listConversations(agentId: string): Promise<readonly Conversation[]>
   appendMessage(message: ConversationMessage): Promise<void>
@@ -138,6 +176,7 @@ export function createAgent(
   const now = options.now ?? new Date()
   const description = input.description?.trim()
   const generalKnowledge = input.generalKnowledge?.trim()
+  const visibility = input.visibility ?? 'private'
 
   if (
     generalKnowledge &&
@@ -152,6 +191,7 @@ export function createAgent(
     ...(description ? { description } : {}),
     instructions,
     ...(generalKnowledge ? { generalKnowledge } : {}),
+    visibility,
     brain: {
       provider,
       model,
@@ -180,6 +220,7 @@ export function updateAgent(
     input.generalKnowledge === undefined
       ? agent.generalKnowledge
       : input.generalKnowledge.trim()
+  const visibility = input.visibility ?? agent.visibility ?? 'private'
   const model = input.model ?? agent.brain
   const provider = model.provider.trim()
   const modelName = model.model.trim()
@@ -201,6 +242,7 @@ export function updateAgent(
     ...(description ? { description } : {}),
     instructions,
     ...(generalKnowledge ? { generalKnowledge } : {}),
+    visibility,
     brain: {
       provider,
       model: modelName,

@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useState, type ReactNode } from 'react'
 
+import { deleteConversationAction, renameConversationAction } from './actions'
+
 export type StudioNavigationAgent = {
   readonly id: string
   readonly name: string
@@ -11,6 +13,7 @@ export type StudioNavigationAgent = {
   readonly conversations?: readonly {
     readonly id: string
     readonly label: string
+    readonly updatedAt: string
   }[]
 }
 
@@ -23,10 +26,12 @@ type StudioShellProps = {
 }
 
 const sectionItems = [
-  { id: 'chat', label: 'Chat', icon: 'chat' },
+  { id: 'overview', label: 'Overview', icon: 'agents' },
+  { id: 'playground', label: 'Playground', icon: 'chat' },
   { id: 'knowledge', label: 'Knowledge', icon: 'knowledge' },
-  { id: 'teachings', label: 'Teachings', icon: 'teachings' },
-  { id: 'evals', label: 'Evaluations', icon: 'evaluations' },
+  { id: 'teachings', label: 'Feedback', icon: 'teachings' },
+  { id: 'evals', label: 'Evals', icon: 'evaluations' },
+  { id: 'settings', label: 'Configuration', icon: 'settings' },
 ] as const
 
 export function Icon({ name }: { readonly name: string }) {
@@ -112,6 +117,7 @@ export function StudioShell({
 }: StudioShellProps) {
   const [explorerOpen, setExplorerOpen] = useState(false)
   const [expandedAgent, setExpandedAgent] = useState(activeAgentId ?? '')
+  const [conversationQuery, setConversationQuery] = useState('')
 
   return (
     <div className="studio-app">
@@ -212,40 +218,140 @@ export function StudioShell({
                                 : undefined
                             }
                             className={`tree-section-link${selected && currentSection === item.id ? ' selected' : ''}`}
-                            href={`/agents/${agent.id}${item.id === 'chat' ? '' : `?tab=${item.id}`}`}
+                            href={`/agents/${agent.id}${item.id === 'overview' ? '' : `?tab=${item.id}`}`}
                             onClick={() => setExplorerOpen(false)}
                           >
                             <Icon name={item.icon} />
                             <span>{item.label}</span>
-                            {item.id === 'chat' && conversations.length ? (
-                              <small>{conversations.length}</small>
+                            {item.id === 'playground' &&
+                            conversations.length ? (
+                              <small>{conversations.length} chats</small>
                             ) : null}
                           </Link>
-                          {item.id === 'chat' &&
+                          {item.id === 'playground' &&
                           selected &&
-                          currentSection === 'chat' &&
+                          currentSection === 'playground' &&
                           conversations.length ? (
                             <div className="tree-conversations">
-                              {conversations.map((conversation, index) => (
-                                <Link
-                                  aria-current={
-                                    activeConversationId === conversation.id
-                                      ? 'page'
-                                      : undefined
+                              <label className="conversation-filter">
+                                <span className="visually-hidden">
+                                  Search conversations
+                                </span>
+                                <input
+                                  onChange={(event) =>
+                                    setConversationQuery(
+                                      event.target.value.trim().toLowerCase(),
+                                    )
                                   }
-                                  className={`tree-conversation-link${activeConversationId === conversation.id ? ' selected' : ''}`}
-                                  href={`/agents/${agent.id}?conversation=${conversation.id}`}
-                                  key={conversation.id}
-                                  onClick={() => setExplorerOpen(false)}
-                                >
-                                  <span className="conversation-branch" />
-                                  <Icon name="chat" />
-                                  <span>
-                                    Conversation {conversations.length - index}
-                                  </span>
-                                  <small>{conversation.label}</small>
-                                </Link>
-                              ))}
+                                  placeholder="Search chats"
+                                  type="search"
+                                  value={conversationQuery}
+                                />
+                              </label>
+                              {conversations
+                                .filter((conversation) =>
+                                  conversation.label
+                                    .toLowerCase()
+                                    .includes(conversationQuery),
+                                )
+                                .map((conversation) => (
+                                  <div
+                                    className="tree-conversation-row"
+                                    key={conversation.id}
+                                  >
+                                    <Link
+                                      aria-current={
+                                        activeConversationId === conversation.id
+                                          ? 'page'
+                                          : undefined
+                                      }
+                                      className={`tree-conversation-link${activeConversationId === conversation.id ? ' selected' : ''}`}
+                                      href={`/agents/${agent.id}?tab=playground&conversation=${conversation.id}`}
+                                      onClick={() => setExplorerOpen(false)}
+                                    >
+                                      <span className="conversation-branch" />
+                                      <Icon name="chat" />
+                                      <span className="tree-conversation-title">
+                                        {conversation.label}
+                                      </span>
+                                      <small>{conversation.updatedAt}</small>
+                                    </Link>
+                                    <details className="conversation-actions">
+                                      <summary
+                                        aria-label="Conversation actions"
+                                        title="Conversation actions"
+                                      >
+                                        ···
+                                      </summary>
+                                      <div>
+                                        <form action={renameConversationAction}>
+                                          <input
+                                            name="agentId"
+                                            type="hidden"
+                                            value={agent.id}
+                                          />
+                                          <input
+                                            name="conversationId"
+                                            type="hidden"
+                                            value={conversation.id}
+                                          />
+                                          <label>
+                                            Rename
+                                            <input
+                                              name="title"
+                                              maxLength={120}
+                                              required
+                                              defaultValue={conversation.label}
+                                            />
+                                          </label>
+                                          <button type="submit">
+                                            Save name
+                                          </button>
+                                        </form>
+                                        <form
+                                          action={deleteConversationAction}
+                                          onSubmit={(event) => {
+                                            if (
+                                              !window.confirm(
+                                                'Delete this conversation and its messages? This cannot be undone.',
+                                              )
+                                            ) {
+                                              event.preventDefault()
+                                            }
+                                          }}
+                                        >
+                                          <input
+                                            name="agentId"
+                                            type="hidden"
+                                            value={agent.id}
+                                          />
+                                          <input
+                                            name="conversationId"
+                                            type="hidden"
+                                            value={conversation.id}
+                                          />
+                                          <button
+                                            aria-label="Delete conversation"
+                                            title="Delete conversation"
+                                            type="submit"
+                                          >
+                                            ×
+                                          </button>
+                                        </form>
+                                      </div>
+                                    </details>
+                                  </div>
+                                ))}
+                              {conversations.every(
+                                (conversation) =>
+                                  !conversation.label
+                                    .toLowerCase()
+                                    .includes(conversationQuery),
+                              ) ? (
+                                <p className="conversation-no-results">
+                                  No matching chats
+                                </p>
+                              ) : null}
                             </div>
                           ) : null}
                         </div>

@@ -1,5 +1,6 @@
 import type {
   AgentMessage,
+  ModelInfo,
   ModelProvider,
   ModelRequest,
   ModelResponse,
@@ -12,6 +13,7 @@ export interface OpenAIProviderOptions {
 }
 
 interface OpenAIResponse {
+  readonly data?: readonly { readonly id?: string }[]
   readonly output_text?: string
   readonly output?: readonly {
     readonly content?: readonly {
@@ -56,6 +58,56 @@ export function createOpenAIProvider({
 }: OpenAIProviderOptions): ModelProvider {
   return {
     id: 'openai',
+    capabilities: {
+      modelDiscovery: true,
+      streaming: false,
+      tools: false,
+      vision: false,
+      structuredOutput: false,
+    },
+    async listModels(): Promise<readonly ModelInfo[]> {
+      if (!apiKey) {
+        throw new Error('OpenAI is not configured for model discovery.')
+      }
+      let response: Response
+      try {
+        response = await fetchImplementation(
+          `${baseUrl.replace(/\/$/, '')}/models`,
+          { headers: { Authorization: `Bearer ${apiKey}` } },
+        )
+      } catch {
+        throw new Error('Could not reach OpenAI to list models.')
+      }
+      let payload: OpenAIResponse
+      try {
+        payload = (await response.json()) as OpenAIResponse
+      } catch {
+        throw new Error('OpenAI returned a malformed model list.')
+      }
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('OpenAI rejected the configured credentials.')
+        }
+        throw new Error(
+          `OpenAI model listing failed with status ${response.status}.`,
+        )
+      }
+      if (!Array.isArray(payload.data)) {
+        throw new Error('OpenAI returned a malformed model list.')
+      }
+      const unsupported =
+        /embed|tts|transcri|whisper|image|moderation|realtime|computer-use|search-preview/i
+      return payload.data
+        .map((model) => model.id?.trim())
+        .filter(
+          (id): id is string =>
+            Boolean(id) &&
+            /^(gpt-|o[134](?:-|$))/.test(id) &&
+            !unsupported.test(id),
+        )
+        .sort((left, right) => left.localeCompare(right))
+        .map((id) => ({ id }))
+    },
     async generate(request: ModelRequest): Promise<ModelResponse> {
       if (!apiKey) {
         throw new Error(
