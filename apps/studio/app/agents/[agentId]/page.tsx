@@ -117,12 +117,17 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
         >
           <div>
             <p className="eyebrow agent-context-label">Agent workspace</p>
-            <h1>{agent.name}</h1>
-            <p>
-              {tab === 'playground' && conversation
-                ? shortChatTitle
-                : (agent.description ?? agent.instructions)}
-            </p>
+            {tab === 'playground' ? (
+              <>
+                <h1>{chatTitle}</h1>
+                <p className="chat-agent-subtitle">{agent.name}</p>
+              </>
+            ) : (
+              <>
+                <h1>{agent.name}</h1>
+                <p>{agent.description ?? agent.instructions}</p>
+              </>
+            )}
           </div>
           <div className="agent-header-actions">
             <div className="model-chip">

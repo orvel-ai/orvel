@@ -163,12 +163,14 @@ export function StudioShell({
           <span className="forge-brand-mark" aria-hidden="true">
             O
           </span>
-          <span>Orvel Studio</span>
+          <span>Orvel</span>
         </div>
         <div className="forge-window-controls" aria-hidden="true">
-          <span>−</span>
-          <span>□</span>
-          <span className="window-close">×</span>
+          <span aria-label="Minimize">−</span>
+          <span aria-label="Maximize">□</span>
+          <span aria-label="Close" className="window-close">
+            ×
+          </span>
         </div>
       </header>
       {sidebarOpen ? (

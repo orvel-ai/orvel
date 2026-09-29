@@ -2741,6 +2741,37 @@ body::after {
     cover;
 }
 
+.studio-app.is-landing .welcome-screen {
+  width: min(100%, 520px);
+}
+
+.studio-app.is-landing .forge-welcome-emblem {
+  width: 54px;
+  height: 54px;
+  margin-bottom: 17px;
+  border-radius: 16px;
+}
+
+.studio-app.is-landing .forge-welcome-emblem svg {
+  width: 44px;
+  height: 44px;
+}
+
+.studio-app.is-landing .welcome-screen .eyebrow {
+  margin-bottom: 8px;
+}
+
+.studio-app.is-landing .welcome-screen h1 {
+  margin: 0;
+  font-size: 34px;
+}
+
+.studio-app.is-landing .welcome-screen > .welcome-copy {
+  margin-top: 8px;
+  margin-bottom: 21px;
+  font-size: 12px;
+}
+
 .welcome-screen {
   display: flex;
   width: min(100%, 660px);
@@ -2788,6 +2819,22 @@ body::after {
   text-indent: -3px;
 }
 
+.forge-welcome-emblem svg {
+  width: 62px;
+  height: 62px;
+  overflow: visible;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3.3;
+  filter: drop-shadow(0 3px 10px #e66b3024);
+}
+
+.forge-welcome-emblem svg path:first-child {
+  fill: #151416;
+  stroke-width: 3.1;
+}
+
 .welcome-screen .eyebrow {
   margin-bottom: 10px;
   color: #d77a53;
@@ -2810,6 +2857,82 @@ body::after {
   color: #89898f;
   font-size: 12px;
   line-height: 1.65;
+}
+
+.welcome-screen > .welcome-copy {
+  max-width: 540px;
+  margin-top: 5px;
+  margin-bottom: 25px;
+  font-size: 12px;
+}
+
+.welcome-actions {
+  display: grid;
+  width: min(100%, 520px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.welcome-action-card {
+  display: grid;
+  min-width: 0;
+  min-height: 66px;
+  grid-template-columns: 22px minmax(0, 1fr) 12px;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid #303034;
+  border-radius: 7px;
+  background: #111113;
+  color: #d2d2d5;
+  text-align: left;
+  text-decoration: none;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+.welcome-action-card:hover {
+  border-color: #574035;
+  background: #171412;
+}
+
+.welcome-action-card > .icon:first-child {
+  width: 17px;
+  height: 17px;
+  color: #e17a51;
+}
+
+.welcome-action-card > .icon:last-child {
+  width: 12px;
+  height: 12px;
+  color: #76767d;
+}
+
+.welcome-action-card span {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.welcome-action-card strong {
+  color: #dedee1;
+  font-size: 11px;
+  font-weight: 580;
+}
+
+.welcome-action-card small {
+  overflow: hidden;
+  color: #85858b;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.welcome-agent-hint {
+  margin: 17px 0 0;
+  color: #75757b;
+  font-size: 9px;
 }
 
 .forge-welcome-composer-wrap {
@@ -3007,6 +3130,35 @@ body::after {
   font-size: 10px;
 }
 
+.agent-header.chat-page-header {
+  min-height: 54px;
+  flex: none;
+  align-items: center;
+  padding: 6px 2px 7px;
+  border-bottom: 1px solid #262629;
+}
+
+.chat-page-header .agent-context-label {
+  display: none;
+}
+
+.chat-page-header h1 {
+  max-width: min(62vw, 520px);
+  overflow: hidden;
+  color: #e8e8ea;
+  font-size: 13px;
+  font-weight: 570;
+  letter-spacing: -0.015em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-header .chat-agent-subtitle {
+  margin-top: 1px;
+  color: #89898f;
+  font-size: 10px;
+}
+
 .eyebrow {
   color: #85858b;
   font-size: 8px;
@@ -3134,6 +3286,9 @@ body::after {
 
 .message {
   max-width: min(88%, 690px);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   color: #c7c7cb;
   font-size: 11px;
   line-height: 1.6;
@@ -3141,6 +3296,8 @@ body::after {
 
 .message.user {
   max-width: min(78%, 650px);
+  overflow-wrap: anywhere;
+  word-break: break-word;
   padding: 8px 11px;
   border: 1px solid #3a3532;
   border-radius: 8px;
@@ -3161,6 +3318,12 @@ body::after {
   color: #cdcdd1;
 }
 
+.message > p:not(.message-role) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .composer,
 .home-composer.empty-chat-composer {
   width: min(100%, 800px);
@@ -3173,6 +3336,23 @@ body::after {
   box-shadow:
     0 10px 25px #0004,
     inset 0 1px #ffffff08;
+}
+
+.studio-chat-main .workspace-grid,
+.studio-chat-main .chat-panel {
+  width: 100%;
+}
+
+.studio-chat-main .composer {
+  flex: none;
+  margin-bottom: 11px;
+}
+
+.studio-chat-main .composer textarea {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .composer textarea,
@@ -3516,6 +3696,10 @@ body::after {
   .welcome-copy {
     margin: 8px 0 19px;
     font-size: 11px;
+  }
+
+  .welcome-actions {
+    grid-template-columns: 1fr;
   }
 
   .forge-home-composer {

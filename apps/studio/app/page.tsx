@@ -1,7 +1,6 @@
 import Link from 'next/link'
 
 import { AgentForm } from './agent-form'
-import { ForgeWelcomeComposer } from './forge-welcome-composer'
 import { Icon, StudioShell, type StudioNavigationAgent } from './studio-shell'
 import {
   getOllamaAvailability,
@@ -41,38 +40,40 @@ export default async function Home({ searchParams }: PageProps) {
         {view === 'welcome' ? (
           <section className="welcome-screen">
             <div aria-hidden="true" className="forge-welcome-emblem">
-              <span>O</span>
+              <svg viewBox="0 0 120 120" fill="none">
+                <path d="M28 91c-9-7-11-19-8-29 2-7 6-12 12-16l-3-17 18 8c9-4 22-4 31 1l18-9-3 20c6 7 9 15 8 25-2 18-17 31-38 33-14 1-27-5-35-16Z" />
+                <path d="m40 48-9-16 18 7m30 6 14-15-1 23M41 68h1m34-2h1m-25 15c7 6 16 7 23 1m-20 14 4 12 9-1 4-14" />
+                <path d="m21 88-9 7m86-12 10 5M55 28l5-12 8 12" />
+              </svg>
             </div>
             <p className="eyebrow">ORVEL STUDIO</p>
-            <h1>
-              {agents.length
-                ? 'What are you working on?'
-                : 'Create an agent that learns from you.'}
-            </h1>
+            <h1>Welcome</h1>
             <p className="welcome-copy">
-              {agents.length
-                ? 'Choose an agent and start a conversation. Teach it, add knowledge, and refine the results as you go.'
-                : 'Start with a role and instructions, then shape its behavior through conversation.'}
+              No view is open. Select an agent in the Explorer or start
+              something new.
             </p>
-            {agents.length ? (
-              <ForgeWelcomeComposer agents={agents} />
-            ) : (
-              <Link
-                className="button button-primary home-create-agent"
-                href="/?view=create"
-              >
-                <Icon name="plus" /> Create an agent
+            <div className="welcome-actions">
+              <Link className="welcome-action-card" href="/?view=create">
+                <Icon name="plus" />
+                <span>
+                  <strong>Create an agent</strong>
+                  <small>Set up a new agent for your workspace</small>
+                </span>
+                <Icon name="chevron" />
               </Link>
-            )}
+              <Link className="welcome-action-card" href="/?view=agents">
+                <Icon name="agents" />
+                <span>
+                  <strong>Browse agents</strong>
+                  <small>See all agents in this workspace</small>
+                </span>
+                <Icon name="chevron" />
+              </Link>
+            </div>
             {agents.length ? (
-              <div className="home-shortcuts forge-home-links">
-                <Link href="/?view=agents">
-                  <Icon name="agents" /> Browse agents
-                </Link>
-                <Link href="/?view=create">
-                  <Icon name="plus" /> New agent
-                </Link>
-              </div>
+              <p className="welcome-agent-hint">
+                Or choose an agent in the Explorer to open it in this workspace.
+              </p>
             ) : null}
           </section>
         ) : null}
