@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { AgentForm } from './agent-form'
+import { ForgeWelcomeComposer } from './forge-welcome-composer'
 import { Icon, StudioShell, type StudioNavigationAgent } from './studio-shell'
 import {
   getOllamaAvailability,
@@ -10,8 +11,6 @@ import {
 } from './lib/orvel'
 import type { ProviderModelOptions } from './model-selector'
 import { createStudioNavigation } from './lib/studio-navigation'
-import { startConversationAction } from './actions'
-import { FormSubmitButton } from './form-submit-button'
 
 type PageProps = {
   searchParams: Promise<{ error?: string; view?: string }>
@@ -33,56 +32,30 @@ export default async function Home({ searchParams }: PageProps) {
   ])
 
   return (
-    <StudioShell currentSection={view} agents={navigationAgents}>
+    <StudioShell
+      currentSection={view}
+      agents={navigationAgents}
+      landing={view === 'welcome'}
+    >
       <main className="studio-main">
         {view === 'welcome' ? (
           <section className="welcome-screen">
-            <p className="eyebrow">ORVEL · LOCAL WORKSPACE</p>
+            <div aria-hidden="true" className="forge-welcome-emblem">
+              <span>O</span>
+            </div>
+            <p className="eyebrow">ORVEL STUDIO</p>
             <h1>
               {agents.length
-                ? 'Pick up where you left off.'
+                ? 'What are you working on?'
                 : 'Create an agent that learns from you.'}
             </h1>
             <p className="welcome-copy">
               {agents.length
-                ? 'Choose an agent, ask a question, and improve its answers as you go.'
+                ? 'Choose an agent and start a conversation. Teach it, add knowledge, and refine the results as you go.'
                 : 'Start with a role and instructions, then shape its behavior through conversation.'}
             </p>
             {agents.length ? (
-              <form action={startConversationAction} className="home-composer">
-                <label className="visually-hidden" htmlFor="home-agent">
-                  Choose an agent
-                </label>
-                <select
-                  id="home-agent"
-                  name="agentId"
-                  defaultValue={agents[0]?.id}
-                >
-                  {agents.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.name} · {agent.brain.model}
-                    </option>
-                  ))}
-                </select>
-                <label className="visually-hidden" htmlFor="home-message">
-                  Message your agent
-                </label>
-                <textarea
-                  id="home-message"
-                  name="content"
-                  placeholder="Message your agent…"
-                  rows={2}
-                  required
-                />
-                <FormSubmitButton
-                  label="Start conversation"
-                  pendingLabel="Starting conversation"
-                  pendingStyle="spinner"
-                  title="Start conversation"
-                >
-                  <Icon name="send" />
-                </FormSubmitButton>
-              </form>
+              <ForgeWelcomeComposer agents={agents} />
             ) : (
               <Link
                 className="button button-primary home-create-agent"
@@ -92,7 +65,7 @@ export default async function Home({ searchParams }: PageProps) {
               </Link>
             )}
             {agents.length ? (
-              <div className="home-shortcuts">
+              <div className="home-shortcuts forge-home-links">
                 <Link href="/?view=agents">
                   <Icon name="agents" /> Browse agents
                 </Link>

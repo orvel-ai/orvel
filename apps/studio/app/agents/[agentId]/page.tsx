@@ -15,7 +15,6 @@ import {
   updateAgentAction,
 } from '../../actions'
 import {
-  AgentSectionNav,
   Icon,
   StudioShell,
   type StudioNavigationAgent,
@@ -142,8 +141,6 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
             ) : null}
           </div>
         </section>
-
-        <AgentSectionNav agentId={agentId} currentSection={tab} />
 
         {parameters.error ? (
           <p className="alert" role="alert">
