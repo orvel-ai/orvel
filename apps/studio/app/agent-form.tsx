@@ -29,16 +29,16 @@ export function AgentForm({ providerOptions }: AgentFormProps) {
       className="form-stack agent-form new-agent-form"
     >
       <div className="new-agent-intro">
-        <p className="eyebrow">Create an agent</p>
-        <h2>What should this agent do?</h2>
+        <p className="eyebrow">Create a project</p>
+        <h2>What are you working on?</h2>
         <p>
           Give it a role and clear instructions. Refine it later by chatting and
           teaching it.
         </p>
       </div>
       <label className="agent-name-field">
-        Agent name
-        <input name="name" placeholder="Support assistant" required />
+        Project name
+        <input name="name" placeholder="My project" required />
       </label>
       <label className="agent-instructions-field">
         Instructions
@@ -93,10 +93,10 @@ export function AgentForm({ providerOptions }: AgentFormProps) {
       </details>
       <FormSubmitButton
         className="create-agent-submit"
-        label="Create agent"
-        pendingLabel="Creating agent…"
+        label="Create project"
+        pendingLabel="Creating project…"
       >
-        Create agent <span aria-hidden="true">→</span>
+        Create project <span aria-hidden="true">→</span>
       </FormSubmitButton>
     </form>
   )

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { AgentForm } from './agent-form'
+import { ForgeWelcomeComposer } from './forge-welcome-composer'
 import { Icon, StudioShell, type StudioNavigationAgent } from './studio-shell'
 import {
   getOllamaAvailability,
@@ -41,39 +42,19 @@ export default async function Home({ searchParams }: PageProps) {
           <section className="welcome-screen">
             <div aria-hidden="true" className="forge-welcome-emblem">
               <svg viewBox="0 0 120 120" fill="none">
-                <path d="M28 91c-9-7-11-19-8-29 2-7 6-12 12-16l-3-17 18 8c9-4 22-4 31 1l18-9-3 20c6 7 9 15 8 25-2 18-17 31-38 33-14 1-27-5-35-16Z" />
-                <path d="m40 48-9-16 18 7m30 6 14-15-1 23M41 68h1m34-2h1m-25 15c7 6 16 7 23 1m-20 14 4 12 9-1 4-14" />
-                <path d="m21 88-9 7m86-12 10 5M55 28l5-12 8 12" />
+                <path d="M24 56c0-20 15-35 36-36 21-1 37 13 39 34 2 13-3 27-12 36-7 7-16 11-28 11-11 0-22-4-29-12-7-8-10-20-6-33Z" />
+                <path d="M27 43c-8-7-7-18 0-21 8-3 16 4 19 13m29-1c5-9 14-15 21-10 6 5 3 15-4 21M22 48l34 3 1-30 13 1 2 29 29-5M57 22l4-7 9 1 3 8" />
+                <path d="M41 65h1m36-1h1m-31 20c7 7 17 8 24 1m-23-8-7 1m47-1-8-1m-39-3-12-3m59 3 12-3m-53 20 2 12 9 3 6-2 5-12" />
+                <circle cx="44" cy="65" r="4" stroke="#df7445" />
+                <circle cx="78" cy="64" r="4" stroke="#df7445" />
+                <path d="m57 77 5-3 6 3-5 6-6-6Z" />
               </svg>
             </div>
-            <p className="eyebrow">ORVEL STUDIO</p>
-            <h1>Welcome</h1>
-            <p className="welcome-copy">
-              No view is open. Select an agent in the Explorer or start
-              something new.
-            </p>
-            <div className="welcome-actions">
-              <Link className="welcome-action-card" href="/?view=create">
-                <Icon name="plus" />
-                <span>
-                  <strong>Create an agent</strong>
-                  <small>Set up a new agent for your workspace</small>
-                </span>
-                <Icon name="chevron" />
+            <ForgeWelcomeComposer agents={agents} />
+            {!agents.length ? (
+              <Link className="button button-primary" href="/?view=create">
+                <Icon name="plus" /> Create a project
               </Link>
-              <Link className="welcome-action-card" href="/?view=agents">
-                <Icon name="agents" />
-                <span>
-                  <strong>Browse agents</strong>
-                  <small>See all agents in this workspace</small>
-                </span>
-                <Icon name="chevron" />
-              </Link>
-            </div>
-            {agents.length ? (
-              <p className="welcome-agent-hint">
-                Or choose an agent in the Explorer to open it in this workspace.
-              </p>
             ) : null}
           </section>
         ) : null}
@@ -83,20 +64,20 @@ export default async function Home({ searchParams }: PageProps) {
             <header className="page-header">
               <div>
                 <p className="eyebrow">Workspace</p>
-                <h1>Agents</h1>
-                <p>Create and manage your AI agents.</p>
+                <h1>Projects</h1>
+                <p>Open a project or start something new.</p>
               </div>
               <Link className="button button-primary" href="/?view=create">
-                <Icon name="plus" /> New agent
+                <Icon name="plus" /> New project
               </Link>
             </header>
-            <section aria-label="Your agents" className="agents-grid">
+            <section aria-label="Your projects" className="agents-grid">
               {agents.length === 0 ? (
                 <div className="empty-panel">
-                  <strong>Create your first agent</strong>
+                  <strong>Create your first project</strong>
                   <p>Give it a name and purpose to get started.</p>
                   <Link className="button button-primary" href="/?view=create">
-                    Create an agent
+                    Create a project
                   </Link>
                 </div>
               ) : (
@@ -119,7 +100,7 @@ export default async function Home({ searchParams }: PageProps) {
                       </small>
                     </span>
                     <span className="agent-open-label">
-                      Open agent <Icon name="chevron" />
+                      Open project <Icon name="chevron" />
                     </span>
                   </Link>
                 ))
@@ -135,7 +116,7 @@ export default async function Home({ searchParams }: PageProps) {
                 <Link className="back-link" href="/">
                   ‹ Workspace
                 </Link>
-                <h1>New agent</h1>
+                <h1>New project</h1>
                 <p>Start with a name and a clear purpose.</p>
               </div>
               <Link className="button button-quiet" href="/">

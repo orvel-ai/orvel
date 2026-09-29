@@ -4,8 +4,8 @@ import type { ReactNode } from 'react'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Orvel Studio',
-  description: 'Create, teach, evaluate, and deploy AI agents with Orvel.',
+  title: 'Forge',
+  description: 'A focused workspace for building and refining projects.',
 }
 
 export default function RootLayout({

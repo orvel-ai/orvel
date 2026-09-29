@@ -130,20 +130,26 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
             )}
           </div>
           <div className="agent-header-actions">
-            <div className="model-chip">
-              {agent.brain.provider} · {agent.brain.model}
-            </div>
             {tab === 'playground' ? (
-              <form action={startConversationAction}>
-                <input name="agentId" type="hidden" value={agentId} />
-                <button
-                  className="button button-quiet new-conversation-action"
-                  type="submit"
+              <nav
+                aria-label="Workspace history"
+                className="forge-history-controls"
+              >
+                <Link aria-label="Go back" href="/">
+                  <Icon name="back" />
+                </Link>
+                <Link
+                  aria-label="Open project overview"
+                  href={`/agents/${agentId}?tab=overview`}
                 >
-                  <Icon name="plus" /> New chat
-                </button>
-              </form>
-            ) : null}
+                  <Icon name="chevron" />
+                </Link>
+              </nav>
+            ) : (
+              <div className="model-chip">
+                {agent.brain.provider} · {agent.brain.model}
+              </div>
+            )}
           </div>
         </section>
 
@@ -273,7 +279,7 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
                       name="content"
                       required
                       rows={2}
-                      placeholder={`Message ${agent.name}…`}
+                      placeholder="Send a message…"
                     />
                     <FormSubmitButton
                       label="Start conversation"
@@ -454,14 +460,14 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
                       name="content"
                       required
                       rows={3}
-                      placeholder={`Message ${agent.name}…`}
+                      placeholder="Send follow up…"
                     />
                     <FormSubmitButton
                       disabled={!isProviderConfigured(agent.brain.provider)}
-                      label="Send message"
-                      pendingLabel="Sending message"
+                      label="Send follow up"
+                      pendingLabel="Sending follow up"
                       pendingStyle="spinner"
-                      title="Send message"
+                      title="Send follow up"
                     >
                       <Icon name="send" />
                     </FormSubmitButton>

@@ -18,22 +18,21 @@ type WelcomeAgent = {
 const suggestions = [
   {
     prefix: 'Help me',
-    accent: 'get started',
-    suffix: '',
-    prompt: 'Tell me what you can help me with and how to get started.',
+    accent: 'scaffold a',
+    suffix: 'new feature',
+    prompt: 'Help me scaffold a new feature.',
   },
   {
-    prefix: 'Make answers',
-    accent: 'more useful',
-    suffix: '',
-    prompt: 'What information would help you give me more useful answers?',
+    prefix: 'Surprise me with a',
+    accent: 'brilliant',
+    suffix: 'idea',
+    prompt: 'Surprise me with a brilliant idea.',
   },
   {
-    prefix: 'Build an',
-    accent: 'evaluation',
-    suffix: 'check',
-    prompt:
-      'Suggest a simple question and expected answer I can use to evaluate you.',
+    prefix: 'Recommend areas to',
+    accent: 'improve our',
+    suffix: 'tests',
+    prompt: 'Recommend areas to improve our tests.',
   },
 ]
 
@@ -52,10 +51,10 @@ export function ForgeWelcomeComposer({
     <div className="forge-welcome-composer-wrap">
       <div className="forge-composer-context">
         <label className="forge-select-agent">
-          <Icon name="agents" />
-          <span className="visually-hidden">Choose an agent</span>
+          <Icon name="folder" />
+          <span className="visually-hidden">Select folder</span>
           <select
-            aria-label="Choose an agent"
+            aria-label="Select folder"
             onChange={(event) => setAgentId(event.target.value)}
             value={agentId}
           >
@@ -69,9 +68,13 @@ export function ForgeWelcomeComposer({
             ⌄
           </span>
         </label>
-        <span className="forge-provider-pill">
-          <span className="provider-status-dot" />
-          {activeAgent.brain.provider} · {activeAgent.brain.model}
+        <span
+          className="forge-provider-pill"
+          aria-label={`${activeAgent.brain.provider === 'ollama' ? 'Local' : 'Cloud'} runtime`}
+        >
+          <Icon name="desktop" />
+          {activeAgent.brain.provider === 'ollama' ? 'Local' : 'Cloud'}{' '}
+          <span aria-hidden="true">⌄</span>
         </span>
       </div>
 
@@ -81,17 +84,20 @@ export function ForgeWelcomeComposer({
       >
         <input name="agentId" type="hidden" value={agentId} />
         <label className="visually-hidden" htmlFor="forge-home-message">
-          Message {activeAgent.name}
+          Describe what you want to build
         </label>
         <textarea
           id="forge-home-message"
           name="content"
           onChange={(event) => setContent(event.target.value)}
-          placeholder={`Message ${activeAgent.name}…`}
+          placeholder="Create a project management app like Trello..."
           required
           rows={2}
           value={content}
         />
+        <span className="forge-composer-model" title={activeAgent.brain.model}>
+          {activeAgent.brain.model} <span aria-hidden="true">⌄</span>
+        </span>
         <FormSubmitButton
           label="Send message"
           pendingLabel="Sending message"
