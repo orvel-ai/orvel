@@ -11,6 +11,7 @@ import {
 import type { ProviderModelOptions } from './model-selector'
 import { createStudioNavigation } from './lib/studio-navigation'
 import { startConversationAction } from './actions'
+import { FormSubmitButton } from './form-submit-button'
 
 type PageProps = {
   searchParams: Promise<{ error?: string; view?: string }>
@@ -36,10 +37,16 @@ export default async function Home({ searchParams }: PageProps) {
       <main className="studio-main">
         {view === 'welcome' ? (
           <section className="welcome-screen">
-            <p className="eyebrow">Orvel</p>
-            <h1>What would you like to work on?</h1>
+            <p className="eyebrow">ORVEL · LOCAL WORKSPACE</p>
+            <h1>
+              {agents.length
+                ? 'Pick up where you left off.'
+                : 'Create an agent that learns from you.'}
+            </h1>
             <p className="welcome-copy">
-              Choose an agent and start a conversation.
+              {agents.length
+                ? 'Choose an agent, ask a question, and improve its answers as you go.'
+                : 'Start with a role and instructions, then shape its behavior through conversation.'}
             </p>
             {agents.length ? (
               <form action={startConversationAction} className="home-composer">
@@ -67,30 +74,33 @@ export default async function Home({ searchParams }: PageProps) {
                   rows={2}
                   required
                 />
-                <button
-                  aria-label="Start conversation"
+                <FormSubmitButton
+                  label="Start conversation"
+                  pendingLabel="Starting conversation"
+                  pendingStyle="spinner"
                   title="Start conversation"
-                  type="submit"
                 >
                   <Icon name="send" />
-                </button>
+                </FormSubmitButton>
               </form>
             ) : (
               <Link
                 className="button button-primary home-create-agent"
                 href="/?view=create"
               >
-                <Icon name="plus" /> Create your first agent
-              </Link>
-            )}
-            <div className="home-shortcuts">
-              <Link href="/?view=agents">
-                <Icon name="agents" /> Browse agents
-              </Link>
-              <Link href="/?view=create">
                 <Icon name="plus" /> Create an agent
               </Link>
-            </div>
+            )}
+            {agents.length ? (
+              <div className="home-shortcuts">
+                <Link href="/?view=agents">
+                  <Icon name="agents" /> Browse agents
+                </Link>
+                <Link href="/?view=create">
+                  <Icon name="plus" /> New agent
+                </Link>
+              </div>
+            ) : null}
           </section>
         ) : null}
 
@@ -129,12 +139,14 @@ export default async function Home({ searchParams }: PageProps) {
                     </span>
                     <span className="agent-card-content">
                       <strong>{agent.name}</strong>
+                      <span>{agent.description ?? agent.instructions}</span>
                       <small>
                         {agent.brain.provider} · {agent.brain.model}
                       </small>
-                      <span>{agent.description ?? agent.instructions}</span>
                     </span>
-                    <Icon name="chevron" />
+                    <span className="agent-open-label">
+                      Open agent <Icon name="chevron" />
+                    </span>
                   </Link>
                 ))
               )}

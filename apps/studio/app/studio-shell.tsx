@@ -3,11 +3,7 @@
 import Link from 'next/link'
 import { useState, type ReactNode } from 'react'
 
-import {
-  deleteConversationAction,
-  renameConversationAction,
-  startConversationAction,
-} from './actions'
+import { deleteConversationAction, renameConversationAction } from './actions'
 
 export type StudioNavigationAgent = {
   readonly id: string
@@ -32,12 +28,35 @@ type StudioShellProps = {
 
 const sectionItems = [
   { id: 'overview', label: 'Overview', icon: 'agents' },
-  { id: 'playground', label: 'Playground', icon: 'chat' },
+  { id: 'playground', label: 'Chat', icon: 'chat' },
   { id: 'knowledge', label: 'Knowledge', icon: 'knowledge' },
-  { id: 'teachings', label: 'Feedback', icon: 'teachings' },
+  { id: 'teachings', label: 'Teach', icon: 'teachings' },
   { id: 'evals', label: 'Evals', icon: 'evaluations' },
   { id: 'settings', label: 'Configuration', icon: 'settings' },
 ] as const
+
+export function AgentSectionNav({
+  agentId,
+  currentSection,
+}: {
+  readonly agentId: string
+  readonly currentSection: string
+}) {
+  return (
+    <nav aria-label="Agent workspace" className="agent-tabs">
+      {sectionItems.map((item) => (
+        <Link
+          aria-current={currentSection === item.id ? 'page' : undefined}
+          className={currentSection === item.id ? 'active' : ''}
+          href={`/agents/${agentId}?tab=${item.id}`}
+          key={item.id}
+        >
+          <Icon name={item.icon} /> {item.label}
+        </Link>
+      ))}
+    </nav>
+  )
+}
 
 export function Icon({ name }: { readonly name: string }) {
   const paths: Record<string, ReactNode> = {
@@ -48,26 +67,16 @@ export function Icon({ name }: { readonly name: string }) {
       </>
     ),
     home: (
-      <>
-        <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z" />
-      </>
+      <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z" />
     ),
     history: (
       <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3 2" />
-      </>
-    ),
-    library: (
-      <>
-        <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5Z" />
-        <path d="M4 17a2.5 2.5 0 0 1 2.5-2.5H20M8 7h8" />
+        <circle cx="10.8" cy="10.8" r="6.8" />
+        <path d="m16 16 4.5 4.5" />
       </>
     ),
     chat: (
-      <>
-        <path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-4-.9L4 20l1.3-3.6A7.2 7.2 0 0 1 4 12c0-4.4 3.6-8 8-8s8 3.1 8 7.5Z" />
-      </>
+      <path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-4-.9L4 20l1.3-3.6A7.2 7.2 0 0 1 4 12c0-4.4 3.6-8 8-8s8 3.1 8 7.5Z" />
     ),
     knowledge: (
       <>
@@ -82,7 +91,7 @@ export function Icon({ name }: { readonly name: string }) {
         <path d="M8 7h8M8 11h7" />
       </>
     ),
-    evals: (
+    evaluations: (
       <>
         <path d="M4 19V5M4 19h17" />
         <path d="m7 15 4-5 3 2 5-7" />
@@ -91,20 +100,10 @@ export function Icon({ name }: { readonly name: string }) {
     settings: (
       <>
         <circle cx="12" cy="12" r="3" />
-        <path d="m19.4 15 .1.1 1.2.9-1.2 2.1-1.4-.6a7 7 0 0 1-1.5.9l-.2 1.6h-2.4l-.3-1.6a7 7 0 0 1-1.6-.9l-1.4.6-1.2-2.1 1.2-.9a7 7 0 0 1 0-1.8l-1.2-.9 1.2-2.1 1.4.6a7 7 0 0 1 1.6-.9l.3-1.6h2.4l.2 1.6a7 7 0 0 1 1.5.9l1.4-.6 1.2 2.1-1.2.9a7 7 0 0 1-.1 1.7Z" />
+        <path d="m19.4 15 .1.1 1.2.9-1.2 2.1-1.4-.6a7 7 0 0 1-1.5.9l-.2 1.6h-2.4l-.3-1.6a7 7 0 0 1-1.6-.9l-1.4.6-1.2-2.1 1.2-.9a7 7 0 0 1 0-1.8l-1.2-.9 1.2-2.1 1.4.6a7 7 0 0 1 1.6-.9l.3-1.6h2.4l.2 1.6 1.5.9 1.4-.6 1.2 2.1-1.2.9a7 7 0 0 1-.1 1.7Z" />
       </>
     ),
-    person: (
-      <>
-        <circle cx="12" cy="8" r="3.5" />
-        <path d="M5 20c.7-3.6 3.2-5.5 7-5.5s6.3 1.9 7 5.5" />
-      </>
-    ),
-    plus: (
-      <>
-        <path d="M12 5v14M5 12h14" />
-      </>
-    ),
+    plus: <path d="M12 5v14M5 12h14" />,
     edit: (
       <>
         <path d="M12 20h9" />
@@ -112,18 +111,7 @@ export function Icon({ name }: { readonly name: string }) {
       </>
     ),
     chevron: <path d="m9 18 6-6-6-6" />,
-    search: (
-      <>
-        <circle cx="10.8" cy="10.8" r="6.8" />
-        <path d="m16 16 4.5 4.5" />
-      </>
-    ),
-    back: (
-      <>
-        <path d="m15 18-6-6 6-6" />
-        <path d="M9 12h11" />
-      </>
-    ),
+    back: <path d="m15 18-6-6 6-6" />,
     send: (
       <>
         <path d="M12 19V5" />
@@ -155,306 +143,314 @@ export function StudioShell({
   currentSection,
   children,
 }: StudioShellProps) {
-  const [explorerOpen, setExplorerOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [expandedAgent, setExpandedAgent] = useState(activeAgentId ?? '')
   const [conversationQuery, setConversationQuery] = useState('')
-  const knowledgeAgentId = activeAgentId ?? agents[0]?.id
+  const scopedAgentId = activeAgentId ?? agents[0]?.id
+
+  const closeSidebar = () => setSidebarOpen(false)
 
   return (
     <div className="studio-app">
-      {explorerOpen ? (
+      {sidebarOpen ? (
         <button
-          aria-label="Close Explorer"
-          className="explorer-scrim"
-          onClick={() => setExplorerOpen(false)}
+          aria-label="Close navigation"
+          className="sidebar-scrim"
+          onClick={closeSidebar}
           type="button"
         />
       ) : null}
 
-      <aside className="studio-rail" aria-label="Studio navigation">
-        <nav className="rail-navigation" aria-label="Workspace sections">
-          <Link
-            aria-label="Home"
-            className={`rail-link${currentSection === 'welcome' ? ' selected' : ''}`}
-            href="#recent-conversations"
-            title="Home"
-          >
-            <Icon name="home" />
-          </Link>
-          <Link
-            aria-label="Recent chats"
-            className={`rail-link${activeConversationId ? ' selected' : ''}`}
-            href="/"
-            title="Recent chats"
-          >
-            <Icon name="history" />
-          </Link>
-          <Link
-            aria-label="Agents"
-            className={`rail-link${currentSection === 'agents' ? ' selected' : ''}`}
-            href="/?view=agents"
-            title="Agents"
-          >
-            <Icon name="agents" />
-          </Link>
-          <Link
-            aria-label="Knowledge"
-            className={`rail-link${currentSection === 'knowledge' ? ' selected' : ''}`}
-            href={knowledgeAgentId ? `/agents/${knowledgeAgentId}?tab=knowledge` : '/?view=agents'}
-            title="Knowledge"
-          >
-            <Icon name="knowledge" />
-          </Link>
-        </nav>
-        <div className="rail-bottom">
-          <Link
-            aria-label="Settings"
-            className={`rail-link${currentSection === 'settings' ? ' selected' : ''}`}
-            href="/?view=settings"
-            title="Settings"
-          >
-            <Icon name="settings" />
-          </Link>
-          <details className="rail-profile">
-            <summary aria-label="Profile" title="Profile">
-              <span>O</span>
-            </summary>
-            <div className="profile-popover">
-              <strong>Orvel Studio</strong>
-              <span>Local workspace</span>
-              <Link href="/?view=settings">Workspace settings</Link>
-            </div>
-          </details>
-        </div>
-      </aside>
-
-      <aside className={`studio-explorer${explorerOpen ? ' is-open' : ''}`}>
-        <header className="chat-sidebar-brand">
-          <Link aria-label="Orvel home" className="chat-brand" href="/">
-            <span>Orvel</span>
-            <Icon name="chevron" />
+      <aside className={`studio-sidebar${sidebarOpen ? ' is-open' : ''}`}>
+        <header className="sidebar-topline">
+          <Link aria-label="Orvel home" className="brand-lockup" href="/">
+            <span className="brand-glyph">O</span>
+            <span>orvel</span>
           </Link>
           <button
-            aria-label="Close sidebar"
-            className="icon-button mobile-close"
-            onClick={() => setExplorerOpen(false)}
+            aria-label="Close navigation"
+            className="sidebar-close"
+            onClick={closeSidebar}
             type="button"
           >
             ×
           </button>
         </header>
 
-        {activeAgentId && agents.some((agent) => agent.id === activeAgentId) ? (
-          <form action={startConversationAction} className="new-chat-form">
-            <input name="agentId" type="hidden" value={activeAgentId} />
-            <button className="new-chat-button" type="submit">
-              <Icon name="edit" /> New chat
-            </button>
-          </form>
-        ) : agents[0] ? (
-          <form action={startConversationAction} className="new-chat-form">
-            <input name="agentId" type="hidden" value={agents[0].id} />
-            <button className="new-chat-button" type="submit">
-              <Icon name="edit" /> New chat
-            </button>
-          </form>
-        ) : (
-          <Link className="new-chat-button" href="/?view=create">
-            <Icon name="plus" /> Create an agent
-          </Link>
-        )}
-
-        <Link className="sidebar-agents-link" href="/?view=agents">
-          <Icon name="agents" /> <span>Agents</span>
-          <Icon name="chevron" />
-        </Link>
-        <label className="recent-search">
-          <span className="visually-hidden">Search conversations</span>
-          <Icon name="search" />
-          <input
-            onChange={(event) =>
-              setConversationQuery(event.target.value.trim().toLowerCase())
-            }
-            placeholder="Search chats"
-            type="search"
-            value={conversationQuery}
-          />
-        </label>
-        <nav
-          aria-label="Recent conversations"
-          className="recent-chat-list"
-          id="recent-conversations"
+        <Link
+          className="new-agent-button"
+          href="/?view=create"
+          onClick={closeSidebar}
         >
-          <p className="sidebar-section-label">Recents</p>
-          {agents
-            .flatMap((agent) =>
-              (agent.conversations ?? []).map((conversation) => ({
-                ...conversation,
-                agentId: agent.id,
-                agentName: agent.name,
-              })),
-            )
-            .sort((left, right) => right.timestamp - left.timestamp)
-            .filter((conversation) =>
-              `${conversation.label} ${conversation.agentName}`
-                .toLowerCase()
-                .includes(conversationQuery),
-            )
-            .map((conversation) => (
-              <div className="recent-chat-row" key={conversation.id}>
-                <Link
-                  aria-current={
-                    activeConversationId === conversation.id
-                      ? 'page'
-                      : undefined
-                  }
-                  className={`recent-chat-link${activeConversationId === conversation.id ? ' selected' : ''}`}
-                  href={`/agents/${conversation.agentId}?tab=playground&conversation=${conversation.id}`}
-                  onClick={() => setExplorerOpen(false)}
-                >
-                  <span className="recent-chat-title">
-                    {conversation.label}
-                  </span>
-                  <small>
-                    {conversation.agentName} · {conversation.updatedAt}
-                  </small>
-                </Link>
-                <details className="conversation-actions">
-                  <summary
-                    aria-label="Conversation actions"
-                    title="Conversation actions"
-                  >
-                    ···
-                  </summary>
-                  <div>
-                    <form action={renameConversationAction}>
-                      <input
-                        name="agentId"
-                        type="hidden"
-                        value={conversation.agentId}
-                      />
-                      <input
-                        name="conversationId"
-                        type="hidden"
-                        value={conversation.id}
-                      />
-                      <label>
-                        Rename
-                        <input
-                          name="title"
-                          maxLength={120}
-                          required
-                          defaultValue={conversation.label}
-                        />
-                      </label>
-                      <button type="submit">Save name</button>
-                    </form>
-                    <form
-                      action={deleteConversationAction}
-                      onSubmit={(event) => {
-                        if (
-                          !window.confirm(
-                            'Delete this conversation and its messages? This cannot be undone.',
-                          )
-                        )
-                          event.preventDefault()
-                      }}
-                    >
-                      <input
-                        name="agentId"
-                        type="hidden"
-                        value={conversation.agentId}
-                      />
-                      <input
-                        name="conversationId"
-                        type="hidden"
-                        value={conversation.id}
-                      />
-                      <button type="submit">Delete chat</button>
-                    </form>
-                  </div>
-                </details>
-              </div>
-            ))}
-          {agents.some((agent) => agent.conversations?.length) &&
-          !agents.some((agent) =>
-            (agent.conversations ?? []).some((conversation) =>
-              `${conversation.label} ${agent.name}`
-                .toLowerCase()
-                .includes(conversationQuery),
-            ),
-          ) ? (
-            <p className="conversation-no-results">No matching chats</p>
-          ) : null}
-          {!agents.some((agent) => agent.conversations?.length) ? (
-            <p className="recent-empty">Your conversations will appear here.</p>
-          ) : null}
+          <Icon name="plus" />
+          <span>New agent</span>
+        </Link>
+
+        <nav aria-label="Workspace" className="primary-navigation">
+          <Link
+            aria-current={currentSection === 'agents' ? 'page' : undefined}
+            className={currentSection === 'agents' ? 'active' : ''}
+            href="/?view=agents"
+            onClick={closeSidebar}
+          >
+            <Icon name="agents" /> Agents
+          </Link>
+          <Link
+            aria-current={currentSection === 'knowledge' ? 'page' : undefined}
+            className={currentSection === 'knowledge' ? 'active' : ''}
+            href={
+              scopedAgentId
+                ? `/agents/${scopedAgentId}?tab=knowledge`
+                : '/?view=agents'
+            }
+            onClick={closeSidebar}
+          >
+            <Icon name="knowledge" /> Knowledge
+          </Link>
+          <Link
+            aria-current={currentSection === 'evals' ? 'page' : undefined}
+            className={currentSection === 'evals' ? 'active' : ''}
+            href={
+              scopedAgentId
+                ? `/agents/${scopedAgentId}?tab=evals`
+                : '/?view=agents'
+            }
+            onClick={closeSidebar}
+          >
+            <Icon name="evaluations" /> Evals
+          </Link>
         </nav>
 
-        <details className="sidebar-agent-manager">
-          <summary>Agent workspace</summary>
-          <nav aria-label="Agent workspace" className="agent-tree">
-            {agents.map((agent) => {
-              const expanded = expandedAgent === agent.id
-              const selected = activeAgentId === agent.id
-              return (
-                <div className="tree-agent" key={agent.id}>
-                  <div
-                    className={`tree-agent-row${selected ? ' selected' : ''}`}
-                  >
-                    <button
-                      aria-expanded={expanded}
-                      aria-label={`${expanded ? 'Collapse' : 'Expand'} ${agent.name}`}
-                      className="tree-chevron"
-                      onClick={() => setExpandedAgent(expanded ? '' : agent.id)}
-                      type="button"
+        <section aria-label="Agents" className="sidebar-agent-section">
+          <div className="sidebar-section-heading">
+            <span>Your agents</span>
+            <Link
+              aria-label="Create an agent"
+              href="/?view=create"
+              onClick={closeSidebar}
+            >
+              <Icon name="plus" />
+            </Link>
+          </div>
+          <nav aria-label="Your agents" className="sidebar-agent-list">
+            {agents.length ? (
+              agents.map((agent) => {
+                const selected = activeAgentId === agent.id
+                const expanded = expandedAgent === agent.id
+                return (
+                  <div className="sidebar-agent-item" key={agent.id}>
+                    <div
+                      className={`sidebar-agent-row${selected ? ' selected' : ''}`}
                     >
-                      <Icon name="chevron" />
-                    </button>
-                    <Link
-                      className="tree-agent-link"
-                      href={`/agents/${agent.id}?tab=playground`}
-                    >
-                      <span className="agent-avatar">
-                        {agent.name.slice(0, 1).toUpperCase()}
-                      </span>
-                      <span className="tree-agent-name">{agent.name}</span>
-                    </Link>
-                  </div>
-                  {expanded ? (
-                    <div className="tree-sections">
-                      {sectionItems.map((item) => (
-                        <Link
-                          aria-current={
-                            selected && currentSection === item.id
-                              ? 'page'
-                              : undefined
-                          }
-                          className={`tree-section-link${selected && currentSection === item.id ? ' selected' : ''}`}
-                          href={`/agents/${agent.id}?tab=${item.id}`}
-                          key={item.id}
-                        >
-                          <Icon name={item.icon} /> <span>{item.label}</span>
-                        </Link>
-                      ))}
+                      <button
+                        aria-expanded={expanded}
+                        aria-label={`${expanded ? 'Collapse' : 'Expand'} ${agent.name}`}
+                        className="sidebar-agent-expander"
+                        onClick={() =>
+                          setExpandedAgent(expanded ? '' : agent.id)
+                        }
+                        type="button"
+                      >
+                        <Icon name="chevron" />
+                      </button>
+                      <Link
+                        className="sidebar-agent-link"
+                        href={`/agents/${agent.id}?tab=playground`}
+                        onClick={closeSidebar}
+                      >
+                        <span className="agent-avatar">
+                          {agent.name.slice(0, 1).toUpperCase()}
+                        </span>
+                        <span className="sidebar-agent-name">{agent.name}</span>
+                      </Link>
                     </div>
-                  ) : null}
-                </div>
-              )
-            })}
+                    {expanded ? (
+                      <div className="sidebar-agent-tools">
+                        {sectionItems.map((item) => (
+                          <Link
+                            aria-current={
+                              selected && currentSection === item.id
+                                ? 'page'
+                                : undefined
+                            }
+                            className={
+                              selected && currentSection === item.id
+                                ? 'active'
+                                : ''
+                            }
+                            href={`/agents/${agent.id}?tab=${item.id}`}
+                            key={item.id}
+                            onClick={closeSidebar}
+                          >
+                            <Icon name={item.icon} /> {item.label}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                )
+              })
+            ) : (
+              <p className="sidebar-empty">Your agents will appear here.</p>
+            )}
           </nav>
-          <Link className="sidebar-create-agent" href="/?view=create">
-            <Icon name="plus" /> Create an agent
-          </Link>
+        </section>
+
+        <details
+          className="sidebar-recents"
+          open={Boolean(activeConversationId) || undefined}
+        >
+          <summary>
+            <Icon name="history" />
+            <span>Recent chats</span>
+            <Icon name="chevron" />
+          </summary>
+          <label className="recent-search">
+            <span className="visually-hidden">Search conversations</span>
+            <Icon name="history" />
+            <input
+              onChange={(event) =>
+                setConversationQuery(event.target.value.trim().toLowerCase())
+              }
+              placeholder="Search chats"
+              type="search"
+              value={conversationQuery}
+            />
+          </label>
+          <nav aria-label="Recent conversations" className="recent-chat-list">
+            {agents
+              .flatMap((agent) =>
+                (agent.conversations ?? []).map((conversation) => ({
+                  ...conversation,
+                  agentId: agent.id,
+                  agentName: agent.name,
+                })),
+              )
+              .sort((left, right) => right.timestamp - left.timestamp)
+              .filter((conversation) =>
+                `${conversation.label} ${conversation.agentName}`
+                  .toLowerCase()
+                  .includes(conversationQuery),
+              )
+              .map((conversation) => (
+                <div className="recent-chat-row" key={conversation.id}>
+                  <Link
+                    aria-current={
+                      activeConversationId === conversation.id
+                        ? 'page'
+                        : undefined
+                    }
+                    className={`recent-chat-link${activeConversationId === conversation.id ? ' selected' : ''}`}
+                    href={`/agents/${conversation.agentId}?tab=playground&conversation=${conversation.id}`}
+                    onClick={closeSidebar}
+                  >
+                    <span className="recent-chat-title">
+                      {conversation.label}
+                    </span>
+                    <small>
+                      {conversation.agentName} · {conversation.updatedAt}
+                    </small>
+                  </Link>
+                  <details className="conversation-actions">
+                    <summary
+                      aria-label="Conversation actions"
+                      title="Conversation actions"
+                    >
+                      ···
+                    </summary>
+                    <div>
+                      <form action={renameConversationAction}>
+                        <input
+                          name="agentId"
+                          type="hidden"
+                          value={conversation.agentId}
+                        />
+                        <input
+                          name="conversationId"
+                          type="hidden"
+                          value={conversation.id}
+                        />
+                        <label>
+                          Rename
+                          <input
+                            name="title"
+                            maxLength={120}
+                            required
+                            defaultValue={conversation.label}
+                          />
+                        </label>
+                        <button type="submit">Save name</button>
+                      </form>
+                      <form
+                        action={deleteConversationAction}
+                        onSubmit={(event) => {
+                          if (
+                            !window.confirm(
+                              'Delete this conversation and its messages? This cannot be undone.',
+                            )
+                          ) {
+                            event.preventDefault()
+                          }
+                        }}
+                      >
+                        <input
+                          name="agentId"
+                          type="hidden"
+                          value={conversation.agentId}
+                        />
+                        <input
+                          name="conversationId"
+                          type="hidden"
+                          value={conversation.id}
+                        />
+                        <button type="submit">Delete chat</button>
+                      </form>
+                    </div>
+                  </details>
+                </div>
+              ))}
+            {agents.some((agent) => agent.conversations?.length) &&
+            !agents.some((agent) =>
+              (agent.conversations ?? []).some((conversation) =>
+                `${conversation.label} ${agent.name}`
+                  .toLowerCase()
+                  .includes(conversationQuery),
+              ),
+            ) ? (
+              <p className="conversation-no-results">No matching chats</p>
+            ) : null}
+            {!agents.some((agent) => agent.conversations?.length) ? (
+              <p className="recent-empty">Conversations appear here.</p>
+            ) : null}
+          </nav>
         </details>
+
+        <footer className="sidebar-footer">
+          <Link
+            aria-current={
+              currentSection === 'settings' && !activeAgentId
+                ? 'page'
+                : undefined
+            }
+            className={
+              currentSection === 'settings' && !activeAgentId ? 'active' : ''
+            }
+            href="/?view=settings"
+            onClick={closeSidebar}
+          >
+            <Icon name="settings" /> Settings
+          </Link>
+          <span>Local workspace</span>
+        </footer>
       </aside>
 
       {children}
+
       <button
-        aria-expanded={explorerOpen}
-        aria-label="Toggle sidebar"
+        aria-expanded={sidebarOpen}
+        aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
         className="mobile-sidebar-toggle"
-        onClick={() => setExplorerOpen((open) => !open)}
+        onClick={() => setSidebarOpen((open) => !open)}
         type="button"
       >
         <Icon name="agents" />
