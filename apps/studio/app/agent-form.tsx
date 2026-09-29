@@ -3,6 +3,7 @@
 import { useState } from 'react'
 
 import { createAgentAction } from './actions'
+import { FormSubmitButton } from './form-submit-button'
 import { ModelSelector, type ProviderModelOptions } from './model-selector'
 
 type AgentFormProps = {
@@ -23,35 +24,47 @@ export function AgentForm({ providerOptions }: AgentFormProps) {
     (initialProvider === 'ollama' ? 'llama3.2:3b' : '')
 
   return (
-    <form action={createAgentAction} className="panel form-stack agent-form">
-      <div>
-        <p className="eyebrow">New agent</p>
-        <h2>Create an agent</h2>
+    <form
+      action={createAgentAction}
+      className="form-stack agent-form new-agent-form"
+    >
+      <div className="new-agent-intro">
+        <p className="eyebrow">Create an agent</p>
+        <h2>What should this agent do?</h2>
+        <p>
+          Give it a role and clear instructions. Refine it later by chatting and
+          teaching it.
+        </p>
       </div>
-      <label>
-        Name
-        <input name="name" placeholder="SupportBot" required />
+      <label className="agent-name-field">
+        Agent name
+        <input name="name" placeholder="Support assistant" required />
       </label>
-      <label>
-        Description <span>optional</span>
-        <input
-          name="description"
-          placeholder="Handles customer-support questions"
-        />
-      </label>
-      <label>
+      <label className="agent-instructions-field">
         Instructions
         <textarea
           name="instructions"
-          placeholder="You are a customer support agent. Be clear and accurate."
+          placeholder="You help customers understand our returns policy. Be concise and accurate, and ask a follow-up when important details are missing."
           required
-          rows={5}
+          rows={7}
         />
       </label>
+      <ModelSelector
+        options={providerOptions}
+        initialProvider={initialProvider}
+        initialModel={initialModel}
+      />
       <details className="advanced-fields">
-        <summary>Advanced configuration</summary>
+        <summary>Advanced</summary>
         <label>
-          Knowledge notes <span>optional</span>
+          Purpose <span>optional</span>
+          <input
+            name="description"
+            placeholder="Customer support for product and order questions"
+          />
+        </label>
+        <label>
+          General knowledge <span>optional</span>
           <textarea
             name="generalKnowledge"
             rows={4}
@@ -63,27 +76,28 @@ export function AgentForm({ providerOptions }: AgentFormProps) {
             }
           />
           <small>
-            Quick facts for this agent. File, text and URL sources can be added
-            later in Knowledge. {generalKnowledge.length.toLocaleString()} /
-            10,000 characters
+            Short facts included with every response. Add retrievable text later
+            in Knowledge. {generalKnowledge.length.toLocaleString()} / 10,000
+            characters
           </small>
         </label>
         <label>
           Visibility
           <select name="visibility" defaultValue="private">
-            <option value="private">Private — only in this workspace</option>
+            <option value="private">Private · local workspace</option>
             <option value="public" disabled>
-              Public — publishing is not available yet
+              Public · unavailable
             </option>
           </select>
         </label>
       </details>
-      <ModelSelector
-        options={providerOptions}
-        initialProvider={initialProvider}
-        initialModel={initialModel}
-      />
-      <button type="submit">Create agent</button>
+      <FormSubmitButton
+        className="create-agent-submit"
+        label="Create agent"
+        pendingLabel="Creating agent…"
+      >
+        Create agent <span aria-hidden="true">→</span>
+      </FormSubmitButton>
     </form>
   )
 }

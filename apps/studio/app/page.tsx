@@ -9,6 +9,9 @@ import {
   orvel,
 } from './lib/orvel'
 import type { ProviderModelOptions } from './model-selector'
+import { createStudioNavigation } from './lib/studio-navigation'
+import { startConversationAction } from './actions'
+import { FormSubmitButton } from './form-submit-button'
 
 type PageProps = {
   searchParams: Promise<{ error?: string; view?: string }>
@@ -19,12 +22,8 @@ export default async function Home({ searchParams }: PageProps) {
     orvel.listAgents(),
     searchParams,
   ])
-  const navigationAgents: StudioNavigationAgent[] = agents.map((agent) => ({
-    id: agent.id,
-    name: agent.name,
-    provider: agent.brain.provider,
-    model: agent.brain.model,
-  }))
+  const navigationAgents: StudioNavigationAgent[] =
+    await createStudioNavigation(agents)
   const view = ['agents', 'create', 'settings'].includes(parameters.view ?? '')
     ? parameters.view!
     : 'welcome'
@@ -38,37 +37,70 @@ export default async function Home({ searchParams }: PageProps) {
       <main className="studio-main">
         {view === 'welcome' ? (
           <section className="welcome-screen">
-            <div className="welcome-brand">
-              <Icon name="agents" />
-            </div>
-            <p className="eyebrow">Orvel Studio</p>
-            <h1>Welcome</h1>
+            <p className="eyebrow">ORVEL · LOCAL WORKSPACE</p>
+            <h1>
+              {agents.length
+                ? 'Pick up where you left off.'
+                : 'Create an agent that learns from you.'}
+            </h1>
             <p className="welcome-copy">
-              No view is open. Select an agent in the Explorer or start
-              something new.
+              {agents.length
+                ? 'Choose an agent, ask a question, and improve its answers as you go.'
+                : 'Start with a role and instructions, then shape its behavior through conversation.'}
             </p>
-            <div className="welcome-actions">
-              <Link className="welcome-action" href="/?view=create">
-                <Icon name="plus" />
-                <span>
-                  <strong>Create an agent</strong>
-                  <small>Set up a new agent for your workspace</small>
-                </span>
-                <Icon name="chevron" />
+            {agents.length ? (
+              <form action={startConversationAction} className="home-composer">
+                <label className="visually-hidden" htmlFor="home-agent">
+                  Choose an agent
+                </label>
+                <select
+                  id="home-agent"
+                  name="agentId"
+                  defaultValue={agents[0]?.id}
+                >
+                  {agents.map((agent) => (
+                    <option key={agent.id} value={agent.id}>
+                      {agent.name} · {agent.brain.model}
+                    </option>
+                  ))}
+                </select>
+                <label className="visually-hidden" htmlFor="home-message">
+                  Message your agent
+                </label>
+                <textarea
+                  id="home-message"
+                  name="content"
+                  placeholder="Message your agent…"
+                  rows={2}
+                  required
+                />
+                <FormSubmitButton
+                  label="Start conversation"
+                  pendingLabel="Starting conversation"
+                  pendingStyle="spinner"
+                  title="Start conversation"
+                >
+                  <Icon name="send" />
+                </FormSubmitButton>
+              </form>
+            ) : (
+              <Link
+                className="button button-primary home-create-agent"
+                href="/?view=create"
+              >
+                <Icon name="plus" /> Create an agent
               </Link>
-              <Link className="welcome-action" href="/?view=agents">
-                <Icon name="agents" />
-                <span>
-                  <strong>Browse agents</strong>
-                  <small>See all agents in this workspace</small>
-                </span>
-                <Icon name="chevron" />
-              </Link>
-            </div>
-            <p className="welcome-hint">
-              Choose an agent or section from the Explorer to open it in this
-              workspace.
-            </p>
+            )}
+            {agents.length ? (
+              <div className="home-shortcuts">
+                <Link href="/?view=agents">
+                  <Icon name="agents" /> Browse agents
+                </Link>
+                <Link href="/?view=create">
+                  <Icon name="plus" /> New agent
+                </Link>
+              </div>
+            ) : null}
           </section>
         ) : null}
 
@@ -97,7 +129,7 @@ export default async function Home({ searchParams }: PageProps) {
                 agents.map((agent) => (
                   <Link
                     className="agent-card"
-                    href={`/agents/${agent.id}`}
+                    href={`/agents/${agent.id}?tab=playground`}
                     key={agent.id}
                   >
                     <span
@@ -107,12 +139,14 @@ export default async function Home({ searchParams }: PageProps) {
                     </span>
                     <span className="agent-card-content">
                       <strong>{agent.name}</strong>
+                      <span>{agent.description ?? agent.instructions}</span>
                       <small>
                         {agent.brain.provider} · {agent.brain.model}
                       </small>
-                      <span>{agent.description ?? agent.instructions}</span>
                     </span>
-                    <Icon name="chevron" />
+                    <span className="agent-open-label">
+                      Open agent <Icon name="chevron" />
+                    </span>
                   </Link>
                 ))
               )}

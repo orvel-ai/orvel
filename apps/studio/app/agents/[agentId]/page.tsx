@@ -15,6 +15,7 @@ import {
   updateAgentAction,
 } from '../../actions'
 import {
+  AgentSectionNav,
   Icon,
   StudioShell,
   type StudioNavigationAgent,
@@ -27,6 +28,8 @@ import {
 } from '../../lib/orvel'
 import { ModelSelector, type ProviderModelOptions } from '../../model-selector'
 import { DeleteAgentControl } from '../../delete-agent-control'
+import { createStudioNavigation } from '../../lib/studio-navigation'
+import { FormSubmitButton } from '../../form-submit-button'
 
 type PageProps = {
   params: Promise<{ agentId: string }>
@@ -65,7 +68,7 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
       ? parameters.tab === 'chat'
         ? 'playground'
         : parameters.tab
-      : 'overview'
+      : 'playground'
   const [
     conversations,
     teachings,
@@ -89,55 +92,38 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
     conversations.find((item) => item.id === parameters.conversation) ??
     conversations[0]
   const messages = conversation ? await orvel.listMessages(conversation.id) : []
-  const conversationTitles = await Promise.all(
-    conversations.map(async (conversationItem) => {
-      const conversationMessages = await orvel.listMessages(conversationItem.id)
-      const firstUserMessage = conversationMessages.find(
-        (message) => message.role === 'user',
-      )
-      const title = firstUserMessage?.content.replace(/\s+/g, ' ').trim()
-      return {
-        id: conversationItem.id,
-        label:
-          conversationItem.title ??
-          (title
-            ? title.length > 38
-              ? `${title.slice(0, 37)}…`
-              : title
-            : 'New conversation'),
-        updatedAt: time(conversationItem.updatedAt),
-      }
-    }),
-  )
-  const navigationAgents: StudioNavigationAgent[] = allAgents.map((item) => ({
-    id: item.id,
-    name: item.name,
-    provider: item.brain.provider,
-    model: item.brain.model,
-    ...(item.id === agentId
-      ? {
-          conversations: conversationTitles,
-        }
-      : {}),
-  }))
+  const firstUserMessage = messages.find((message) => message.role === 'user')
+  const chatTitle =
+    conversation?.title ??
+    (firstUserMessage?.content.replace(/\s+/g, ' ').trim() ||
+      (conversation ? 'New chat' : 'New conversation'))
+  const shortChatTitle =
+    chatTitle.length > 72 ? `${chatTitle.slice(0, 71).trimEnd()}…` : chatTitle
+  const navigationAgents: StudioNavigationAgent[] =
+    await createStudioNavigation(allAgents)
 
   return (
     <StudioShell
+      key={agentId}
       activeAgentId={agentId}
       agents={navigationAgents}
       currentSection={tab}
-      {...(parameters.conversation
-        ? { activeConversationId: parameters.conversation }
-        : {})}
+      {...(conversation ? { activeConversationId: conversation.id } : {})}
     >
-      <main className="studio-main">
-        <section className="agent-header">
+      <main
+        className={`studio-main${tab === 'playground' ? ' studio-chat-main' : ''}`}
+      >
+        <section
+          className={`agent-header${tab === 'playground' ? ' chat-page-header' : ''}`}
+        >
           <div>
-            <Link className="back-link" href="/">
-              ‹ Workspace
-            </Link>
+            <p className="eyebrow agent-context-label">Agent workspace</p>
             <h1>{agent.name}</h1>
-            <p>{agent.description ?? agent.instructions}</p>
+            <p>
+              {tab === 'playground' && conversation
+                ? shortChatTitle
+                : (agent.description ?? agent.instructions)}
+            </p>
           </div>
           <div className="agent-header-actions">
             <div className="model-chip">
@@ -145,14 +131,19 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
             </div>
             {tab === 'playground' ? (
               <form action={startConversationAction}>
-                <input type="hidden" name="agentId" value={agentId} />
-                <button className="button button-primary" type="submit">
-                  <Icon name="plus" /> New conversation
+                <input name="agentId" type="hidden" value={agentId} />
+                <button
+                  className="button button-quiet new-conversation-action"
+                  type="submit"
+                >
+                  <Icon name="plus" /> New chat
                 </button>
               </form>
             ) : null}
           </div>
         </section>
+
+        <AgentSectionNav agentId={agentId} currentSection={tab} />
 
         {parameters.error ? (
           <p className="alert" role="alert">
@@ -270,10 +261,27 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
               ) : null}
               {!conversation ? (
                 <div className="empty-chat">
-                  <h2>Ready when you are</h2>
-                  <p>
-                    Create a conversation, then try a question for this agent.
-                  </p>
+                  <h2>What would you like to work on?</h2>
+                  <form
+                    action={startConversationAction}
+                    className="home-composer empty-chat-composer"
+                  >
+                    <input type="hidden" name="agentId" value={agentId} />
+                    <textarea
+                      name="content"
+                      required
+                      rows={2}
+                      placeholder={`Message ${agent.name}…`}
+                    />
+                    <FormSubmitButton
+                      label="Start conversation"
+                      pendingLabel="Starting conversation"
+                      pendingStyle="spinner"
+                      title="Start conversation"
+                    >
+                      <Icon name="send" />
+                    </FormSubmitButton>
+                  </form>
                 </div>
               ) : (
                 <>
@@ -444,14 +452,17 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
                       name="content"
                       required
                       rows={3}
-                      placeholder="Ask a question…"
+                      placeholder={`Message ${agent.name}…`}
                     />
-                    <button
-                      type="submit"
+                    <FormSubmitButton
                       disabled={!isProviderConfigured(agent.brain.provider)}
+                      label="Send message"
+                      pendingLabel="Sending message"
+                      pendingStyle="spinner"
+                      title="Send message"
                     >
-                      Send
-                    </button>
+                      <Icon name="send" />
+                    </FormSubmitButton>
                   </form>
                 </>
               )}
