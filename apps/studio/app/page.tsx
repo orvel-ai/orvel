@@ -1,7 +1,6 @@
 import Link from 'next/link'
 
 import { AgentForm } from './agent-form'
-import { ForgeWelcomeComposer } from './forge-welcome-composer'
 import { Icon, StudioShell, type StudioNavigationAgent } from './studio-shell'
 import {
   getOllamaAvailability,
@@ -32,29 +31,40 @@ export default async function Home({ searchParams }: PageProps) {
   ])
 
   return (
-    <StudioShell
-      currentSection={view}
-      agents={navigationAgents}
-      landing={view === 'welcome'}
-    >
-      <main className="studio-main">
+    <StudioShell currentSection={view} agents={navigationAgents}>
+      <main
+        className={`studio-main${view === 'welcome' ? ' welcome-main' : ''}`}
+      >
         {view === 'welcome' ? (
           <section className="welcome-screen">
-            <div aria-hidden="true" className="forge-welcome-emblem">
-              <svg viewBox="0 0 120 120" fill="none">
-                <path d="M24 56c0-20 15-35 36-36 21-1 37 13 39 34 2 13-3 27-12 36-7 7-16 11-28 11-11 0-22-4-29-12-7-8-10-20-6-33Z" />
-                <path d="M27 43c-8-7-7-18 0-21 8-3 16 4 19 13m29-1c5-9 14-15 21-10 6 5 3 15-4 21M22 48l34 3 1-30 13 1 2 29 29-5M57 22l4-7 9 1 3 8" />
-                <path d="M41 65h1m36-1h1m-31 20c7 7 17 8 24 1m-23-8-7 1m47-1-8-1m-39-3-12-3m59 3 12-3m-53 20 2 12 9 3 6-2 5-12" />
-                <circle cx="44" cy="65" r="4" stroke="#df7445" />
-                <circle cx="78" cy="64" r="4" stroke="#df7445" />
-                <path d="m57 77 5-3 6 3-5 6-6-6Z" />
-              </svg>
-            </div>
-            <ForgeWelcomeComposer agents={agents} />
-            {!agents.length ? (
-              <Link className="button button-primary" href="/?view=create">
-                <Icon name="plus" /> Create a project
+            <p className="eyebrow">Orvel Studio</p>
+            <h1>Welcome to your workspace</h1>
+            <p className="welcome-copy">
+              Choose an agent from the sidebar to open its conversations,
+              knowledge, feedback, and evaluations.
+            </p>
+            <div className="welcome-actions">
+              <Link className="welcome-action-card" href="/?view=create">
+                <Icon name="plus" />
+                <span>
+                  <strong>Create an agent</strong>
+                  <small>Set up a new agent for this workspace</small>
+                </span>
+                <Icon name="chevron" />
               </Link>
+              <Link className="welcome-action-card" href="/?view=agents">
+                <Icon name="agents" />
+                <span>
+                  <strong>Browse agents</strong>
+                  <small>See and manage the agents you have created</small>
+                </span>
+                <Icon name="chevron" />
+              </Link>
+            </div>
+            {!agents.length ? (
+              <p className="welcome-agent-hint">
+                Create an agent to start a conversation.
+              </p>
             ) : null}
           </section>
         ) : null}
@@ -64,27 +74,29 @@ export default async function Home({ searchParams }: PageProps) {
             <header className="page-header">
               <div>
                 <p className="eyebrow">Workspace</p>
-                <h1>Projects</h1>
-                <p>Open a project or start something new.</p>
+                <h1>Agents</h1>
+                <p>Create, configure, and work with your agents.</p>
               </div>
               <Link className="button button-primary" href="/?view=create">
-                <Icon name="plus" /> New project
+                <Icon name="plus" /> Create agent
               </Link>
             </header>
-            <section aria-label="Your projects" className="agents-grid">
+            <section aria-label="Your agents" className="agents-grid">
               {agents.length === 0 ? (
                 <div className="empty-panel">
-                  <strong>Create your first project</strong>
-                  <p>Give it a name and purpose to get started.</p>
+                  <strong>Create your first agent</strong>
+                  <p>
+                    Give it a name, purpose, and instructions to get started.
+                  </p>
                   <Link className="button button-primary" href="/?view=create">
-                    Create a project
+                    Create agent
                   </Link>
                 </div>
               ) : (
                 agents.map((agent) => (
                   <Link
                     className="agent-card"
-                    href={`/agents/${agent.id}?tab=playground`}
+                    href={`/agents/${agent.id}?tab=overview`}
                     key={agent.id}
                   >
                     <span
@@ -94,13 +106,13 @@ export default async function Home({ searchParams }: PageProps) {
                     </span>
                     <span className="agent-card-content">
                       <strong>{agent.name}</strong>
-                      <span>{agent.description ?? agent.instructions}</span>
+                      <span>{agent.description || agent.instructions}</span>
                       <small>
                         {agent.brain.provider} · {agent.brain.model}
                       </small>
                     </span>
                     <span className="agent-open-label">
-                      Open project <Icon name="chevron" />
+                      Open agent <Icon name="chevron" />
                     </span>
                   </Link>
                 ))
@@ -116,8 +128,8 @@ export default async function Home({ searchParams }: PageProps) {
                 <Link className="back-link" href="/">
                   ‹ Workspace
                 </Link>
-                <h1>New project</h1>
-                <p>Start with a name and a clear purpose.</p>
+                <h1>New agent</h1>
+                <p>Give it a name, purpose, and clear instructions.</p>
               </div>
               <Link className="button button-quiet" href="/">
                 Cancel

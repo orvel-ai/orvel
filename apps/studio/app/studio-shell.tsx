@@ -23,7 +23,6 @@ type StudioShellProps = {
   readonly activeAgentId?: string
   readonly activeConversationId?: string
   readonly currentSection: string
-  readonly landing?: boolean
   readonly children: ReactNode
 }
 
@@ -31,8 +30,8 @@ const sectionItems = [
   { id: 'overview', label: 'Overview', icon: 'agents' },
   { id: 'playground', label: 'Chat', icon: 'chat' },
   { id: 'knowledge', label: 'Knowledge', icon: 'knowledge' },
-  { id: 'teachings', label: 'Teach', icon: 'teachings' },
-  { id: 'evals', label: 'Evals', icon: 'evaluations' },
+  { id: 'teachings', label: 'Feedback', icon: 'teachings' },
+  { id: 'evals', label: 'Evaluations', icon: 'evaluations' },
   { id: 'settings', label: 'Configuration', icon: 'settings' },
 ] as const
 
@@ -70,12 +69,6 @@ export function Icon({ name }: { readonly name: string }) {
     home: (
       <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z" />
     ),
-    history: (
-      <>
-        <circle cx="10.8" cy="10.8" r="6.8" />
-        <path d="m16 16 4.5 4.5" />
-      </>
-    ),
     chat: (
       <path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-4-.9L4 20l1.3-3.6A7.2 7.2 0 0 1 4 12c0-4.4 3.6-8 8-8s8 3.1 8 7.5Z" />
     ),
@@ -83,34 +76,6 @@ export function Icon({ name }: { readonly name: string }) {
       <>
         <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5Z" />
         <path d="M4 17a2.5 2.5 0 0 1 2.5-2.5H20" />
-      </>
-    ),
-    folder: (
-      <path d="M3 6.5A2.5 2.5 0 0 1 5.5 4H10l2 2h6.5A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-11Z" />
-    ),
-    desktop: (
-      <>
-        <rect x="3" y="4" width="18" height="13" rx="2" />
-        <path d="M8 21h8m-4-4v4" />
-      </>
-    ),
-    terminal: (
-      <>
-        <path d="m4 7 5 5-5 5m8 1h8" />
-        <rect x="2.5" y="3" width="19" height="18" rx="3" />
-      </>
-    ),
-    graph: (
-      <>
-        <rect x="3" y="4" width="7" height="6" rx="1.5" />
-        <rect x="14" y="14" width="7" height="6" rx="1.5" />
-        <path d="M10 7h3a2 2 0 0 1 2 2v5" />
-      </>
-    ),
-    browser: (
-      <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
       </>
     ),
     teachings: (
@@ -136,15 +101,20 @@ export function Icon({ name }: { readonly name: string }) {
     edit: (
       <>
         <path d="M12 20h9" />
-        <path d="m16.5 3.5 4 4L8 20l-5 1 1-5 12.5-12.5Z" />
+        <path d="m16.5 3.5 4 4L8 20l-5 1 1-5L16.5 3.5Z" />
       </>
     ),
     chevron: <path d="m9 18 6-6-6-6" />,
-    back: <path d="m15 18-6-6 6-6" />,
     send: (
       <>
-        <path d="M12 19V5" />
-        <path d="m5 12 7-7 7 7" />
+        <path d="m22 2-7 20-4-9-9-4 20-7Z" />
+        <path d="M22 2 11 13" />
+      </>
+    ),
+    search: (
+      <>
+        <circle cx="10.8" cy="10.8" r="6.8" />
+        <path d="m16 16 4.5 4.5" />
       </>
     ),
   }
@@ -170,34 +140,30 @@ export function StudioShell({
   activeAgentId,
   activeConversationId,
   currentSection,
-  landing = false,
   children,
 }: StudioShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [workspacePanel, setWorkspacePanel] = useState<
-    'terminal' | 'graph' | 'browser' | null
-  >(null)
+  const [filter, setFilter] = useState('')
+  const [expandedAgents, setExpandedAgents] = useState<string[]>(
+    activeAgentId ? [activeAgentId] : [],
+  )
   const scopedAgentId = activeAgentId ?? agents[0]?.id
-
+  const normalizedFilter = filter.trim().toLocaleLowerCase()
+  const visibleAgents = agents.filter((agent) =>
+    `${agent.name} ${agent.conversations?.map((item) => item.label).join(' ') ?? ''}`
+      .toLocaleLowerCase()
+      .includes(normalizedFilter),
+  )
   const closeSidebar = () => setSidebarOpen(false)
+  const toggleAgent = (agentId: string) =>
+    setExpandedAgents((current) =>
+      current.includes(agentId)
+        ? current.filter((id) => id !== agentId)
+        : [...current, agentId],
+    )
 
   return (
-    <div className={`studio-app${landing ? ' is-landing' : ''}`}>
-      <header className="forge-titlebar" aria-label="Forge window">
-        <div className="forge-window-brand">
-          <span className="forge-brand-mark" aria-hidden="true">
-            F
-          </span>
-          <span>Forge</span>
-        </div>
-        <div className="forge-window-controls" aria-hidden="true">
-          <span aria-label="Minimize">−</span>
-          <span aria-label="Maximize">□</span>
-          <span aria-label="Close" className="window-close">
-            ×
-          </span>
-        </div>
-      </header>
+    <div className="studio-app">
       {sidebarOpen ? (
         <button
           aria-label="Close navigation"
@@ -206,322 +172,175 @@ export function StudioShell({
           type="button"
         />
       ) : null}
+      <aside className={`studio-sidebar${sidebarOpen ? ' is-open' : ''}`}>
+        <header className="sidebar-topline">
+          <Link aria-label="Orvel home" className="brand-lockup" href="/">
+            <span className="brand-glyph" aria-hidden="true">
+              O
+            </span>
+            <span>Orvel</span>
+          </Link>
+          <button
+            aria-label="Close navigation"
+            className="sidebar-close"
+            onClick={closeSidebar}
+            type="button"
+          >
+            ×
+          </button>
+        </header>
 
-      {!landing ? (
-        <aside className={`studio-sidebar${sidebarOpen ? ' is-open' : ''}`}>
-          <header className="sidebar-topline">
-            <Link aria-label="Forge home" className="brand-lockup" href="/">
-              <span className="brand-glyph">F</span>
-              <span>Forge</span>
-            </Link>
-            <button
-              aria-label="Close navigation"
-              className="sidebar-close"
-              onClick={closeSidebar}
-              type="button"
-            >
-              ×
+        {scopedAgentId ? (
+          <form
+            action={startConversationAction}
+            className="sidebar-new-chat-form"
+          >
+            <input name="agentId" type="hidden" value={scopedAgentId} />
+            <button className="new-agent-button" type="submit">
+              <Icon name="edit" />
+              <span>New conversation</span>
             </button>
-          </header>
+          </form>
+        ) : (
+          <Link
+            className="new-agent-button"
+            href="/?view=create"
+            onClick={closeSidebar}
+          >
+            <Icon name="plus" />
+            <span>Create an agent</span>
+          </Link>
+        )}
 
-          {scopedAgentId ? (
-            <form
-              action={startConversationAction}
-              className="sidebar-new-chat-form"
-            >
-              <input name="agentId" type="hidden" value={scopedAgentId} />
-              <button className="new-agent-button" type="submit">
-                <Icon name="edit" />
-                <span>New Chat</span>
-              </button>
-            </form>
-          ) : (
+        <section aria-label="Agents" className="sidebar-agent-section">
+          <div className="sidebar-section-heading">
+            <span>Agents</span>
             <Link
-              className="new-agent-button"
+              aria-label="Create agent"
               href="/?view=create"
               onClick={closeSidebar}
             >
-              <Icon name="edit" />
-              <span>New Chat</span>
+              <Icon name="plus" />
             </Link>
-          )}
-
-          <nav aria-label="Main menu" className="primary-navigation">
-            <Link href="/?view=settings" onClick={closeSidebar}>
-              <Icon name="knowledge" /> Integrations
-            </Link>
-            <Link href="/?view=settings" onClick={closeSidebar}>
-              <Icon name="settings" /> Account Management
-            </Link>
-          </nav>
-
-          <section
-            aria-label="Projects"
-            className="sidebar-agent-section forge-projects-list"
-          >
-            <div className="sidebar-section-heading">
-              <span>Projects</span>
-              <Link
-                aria-label="Create a project"
-                href="/?view=create"
-                onClick={closeSidebar}
-              >
-                <Icon name="plus" />
-              </Link>
-            </div>
-            <nav aria-label="Projects" className="sidebar-agent-list">
-              {agents.map((agent) => (
-                <Link
-                  aria-current={activeAgentId === agent.id ? 'page' : undefined}
-                  className={`forge-project-link${activeAgentId === agent.id ? ' selected' : ''}`}
-                  href={`/agents/${agent.id}?tab=playground`}
-                  key={agent.id}
-                  onClick={closeSidebar}
-                >
-                  <Icon name="knowledge" />
-                  <span>{agent.name}</span>
-                </Link>
-              ))}
-            </nav>
-          </section>
-
-          <section
-            aria-label="Drafts"
-            className="sidebar-recents forge-drafts-list"
-          >
-            <div className="sidebar-section-heading">
-              <span>Drafts</span>
-            </div>
-            <nav aria-label="Drafts" className="recent-chat-list">
-              {agents
-                .flatMap((agent) =>
-                  (agent.conversations ?? []).map((conversation) => ({
-                    ...conversation,
-                    agentId: agent.id,
-                  })),
-                )
-                .sort((a, b) => b.timestamp - a.timestamp)
-                .slice(0, 12)
-                .map((conversation) => (
-                  <Link
-                    aria-current={
-                      activeConversationId === conversation.id
-                        ? 'page'
-                        : undefined
-                    }
-                    className={`recent-chat-link${activeConversationId === conversation.id ? ' selected' : ''}`}
-                    href={`/agents/${conversation.agentId}?tab=playground&conversation=${conversation.id}`}
-                    key={conversation.id}
-                    onClick={closeSidebar}
+          </div>
+          <label className="sidebar-search">
+            <Icon name="search" />
+            <span className="visually-hidden">
+              Filter agents and conversations
+            </span>
+            <input
+              onChange={(event) => setFilter(event.target.value)}
+              placeholder="Filter agents"
+              value={filter}
+            />
+          </label>
+          <nav aria-label="Agent list" className="sidebar-agent-list">
+            {visibleAgents.map((agent) => {
+              const expanded = expandedAgents.includes(agent.id)
+              return (
+                <div className="sidebar-agent-item" key={agent.id}>
+                  <div
+                    className={`sidebar-agent-row${activeAgentId === agent.id ? ' selected' : ''}`}
                   >
-                    <Icon name="edit" />
-                    <span className="recent-chat-title">
-                      {conversation.label}
-                    </span>
-                  </Link>
-                ))}
-              {!agents.some((agent) => agent.conversations?.length) ? (
-                <p className="recent-empty">No drafts yet</p>
-              ) : null}
-            </nav>
-          </section>
-
-          <footer className="sidebar-footer">
-            <Link href="/?view=settings" onClick={closeSidebar}>
-              <Icon name="settings" /> Settings
-            </Link>
-            <Link
-              className="forge-upgrade"
-              href="/?view=settings"
-              onClick={closeSidebar}
-            >
-              Upgrade
-            </Link>
-          </footer>
-        </aside>
-      ) : null}
-
-      <div
-        className={`forge-workspace${workspacePanel ? ' has-preview-panel' : ''}`}
-      >
-        {children}
-        {workspacePanel ? (
-          <section
-            aria-label={`${workspacePanel} workspace panel`}
-            className="forge-preview-panel"
-          >
-            <header className="forge-preview-tabs">
-              <button
-                className={workspacePanel === 'terminal' ? 'active' : ''}
-                onClick={() => setWorkspacePanel('terminal')}
-                type="button"
-              >
-                <Icon name="terminal" /> Terminal
-              </button>
-              <button
-                className={workspacePanel === 'graph' ? 'active' : ''}
-                onClick={() => setWorkspacePanel('graph')}
-                type="button"
-              >
-                <Icon name="graph" /> Node Graph
-              </button>
-              <button
-                aria-label="Close workspace panel"
-                className="forge-preview-close"
-                onClick={() => setWorkspacePanel(null)}
-                type="button"
-              >
-                ×
-              </button>
-            </header>
-            {workspacePanel === 'graph' ? <ForgeNodeGraph /> : null}
-            {workspacePanel === 'terminal' ? <ForgeTerminal /> : null}
-            {workspacePanel === 'browser' ? <ForgeBrowser /> : null}
-          </section>
-        ) : null}
-        {!landing && scopedAgentId ? (
-          <nav aria-label="Workspace tools" className="forge-tool-rail">
-            <button
-              aria-label="Open terminal panel"
-              className={workspacePanel === 'terminal' ? 'active' : ''}
-              onClick={() =>
-                setWorkspacePanel(
-                  workspacePanel === 'terminal' ? null : 'terminal',
-                )
-              }
-              title="Terminal"
-              type="button"
-            >
-              <Icon name="terminal" />
-            </button>
-            <button
-              aria-label="Open node graph panel"
-              className={workspacePanel === 'graph' ? 'active' : ''}
-              onClick={() =>
-                setWorkspacePanel(workspacePanel === 'graph' ? null : 'graph')
-              }
-              title="Node Graph"
-              type="button"
-            >
-              <Icon name="graph" />
-            </button>
-            <button
-              aria-label="Open browser panel"
-              className={workspacePanel === 'browser' ? 'active' : ''}
-              onClick={() =>
-                setWorkspacePanel(
-                  workspacePanel === 'browser' ? null : 'browser',
-                )
-              }
-              title="Browser"
-              type="button"
-            >
-              <Icon name="browser" />
-            </button>
-            {sectionItems.map((item) => (
-              <Link
-                aria-current={
-                  currentSection === item.id && activeAgentId
-                    ? 'page'
-                    : undefined
-                }
-                className={currentSection === item.id ? 'active' : ''}
-                href={`/agents/${scopedAgentId}?tab=${item.id}`}
-                key={item.id}
-                title={item.label}
-              >
-                <Icon name={item.icon} />
-                <span className="visually-hidden">{item.label}</span>
-              </Link>
-            ))}
+                    <button
+                      aria-expanded={expanded}
+                      aria-label={`${expanded ? 'Collapse' : 'Expand'} ${agent.name}`}
+                      className="sidebar-agent-expander"
+                      onClick={() => toggleAgent(agent.id)}
+                      type="button"
+                    >
+                      <Icon name="chevron" />
+                    </button>
+                    <Link
+                      aria-current={
+                        activeAgentId === agent.id ? 'page' : undefined
+                      }
+                      className="sidebar-agent-link"
+                      href={`/agents/${agent.id}?tab=overview`}
+                      onClick={closeSidebar}
+                    >
+                      <span className="agent-avatar">
+                        {agent.name.slice(0, 1).toUpperCase()}
+                      </span>
+                      <span className="sidebar-agent-name">{agent.name}</span>
+                    </Link>
+                  </div>
+                  {expanded ? (
+                    <div className="sidebar-agent-children">
+                      <Link
+                        className="sidebar-agent-workspace"
+                        href={`/agents/${agent.id}?tab=playground`}
+                        onClick={closeSidebar}
+                      >
+                        <Icon name="chat" />
+                        New chat
+                      </Link>
+                      {(agent.conversations ?? [])
+                        .filter(
+                          (item) =>
+                            !normalizedFilter ||
+                            item.label
+                              .toLocaleLowerCase()
+                              .includes(normalizedFilter),
+                        )
+                        .slice(0, 8)
+                        .map((conversation) => (
+                          <Link
+                            aria-current={
+                              activeConversationId === conversation.id
+                                ? 'page'
+                                : undefined
+                            }
+                            className={`recent-chat-link${activeConversationId === conversation.id ? ' selected' : ''}`}
+                            href={`/agents/${agent.id}?tab=playground&conversation=${conversation.id}`}
+                            key={conversation.id}
+                            onClick={closeSidebar}
+                          >
+                            <span className="recent-chat-title">
+                              {conversation.label}
+                            </span>
+                            <small>{conversation.updatedAt}</small>
+                          </Link>
+                        ))}
+                      {!agent.conversations?.length ? (
+                        <p className="recent-empty">No conversations yet</p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              )
+            })}
+            {!visibleAgents.length ? (
+              <p className="recent-empty">
+                {agents.length ? 'No matching agents' : 'No agents yet'}
+              </p>
+            ) : null}
           </nav>
-        ) : null}
-      </div>
+        </section>
 
-      {!landing ? (
-        <button
-          aria-expanded={sidebarOpen}
-          aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
-          className="mobile-sidebar-toggle"
-          onClick={() => setSidebarOpen((open) => !open)}
-          type="button"
-        >
-          <Icon name="agents" />
-        </button>
-      ) : null}
-    </div>
-  )
-}
+        <footer className="sidebar-footer">
+          <Link
+            aria-current={currentSection === 'settings' ? 'page' : undefined}
+            href="/?view=settings"
+            onClick={closeSidebar}
+          >
+            <Icon name="settings" />
+            Workspace settings
+          </Link>
+        </footer>
+      </aside>
 
-function ForgeNodeGraph() {
-  return (
-    <div className="forge-graph-canvas">
-      <svg
-        aria-hidden="true"
-        className="forge-graph-connections"
-        viewBox="0 0 700 500"
-        preserveAspectRatio="none"
+      <div className="studio-workspace">{children}</div>
+
+      <button
+        aria-expanded={sidebarOpen}
+        aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
+        className="mobile-sidebar-toggle"
+        onClick={() => setSidebarOpen((open) => !open)}
+        type="button"
       >
-        <path d="M190 220 C255 220 245 160 310 160 M190 240 C255 240 245 285 310 285 M440 160 C490 160 480 220 535 220 M440 285 C490 285 480 230 535 230" />
-      </svg>
-      <article className="forge-node forge-node-main">
-        <small>◈ Agent</small>
-        <strong>Project assistant</strong>
-        <span>Instructions and user input</span>
-      </article>
-      <article className="forge-node forge-node-context">
-        <small>◉ Context</small>
-        <strong>Conversation</strong>
-        <span>Current messages</span>
-      </article>
-      <article className="forge-node forge-node-knowledge">
-        <small>▤ Knowledge</small>
-        <strong>Project sources</strong>
-        <span>Reference material</span>
-      </article>
-      <article className="forge-node forge-node-output">
-        <small>↗ Output</small>
-        <strong>Assistant response</strong>
-        <span>Ready for review</span>
-      </article>
-    </div>
-  )
-}
-
-function ForgeTerminal() {
-  return (
-    <div className="forge-terminal-view">
-      <div className="forge-terminal-welcome">
-        <span className="forge-terminal-symbol">F</span>
-        <strong>Forge Terminal</strong>
-        <small>Workspace console</small>
-      </div>
-      <p>
-        <span>›</span> Ready for your next command
-      </p>
-      <div className="forge-terminal-prompt">
-        <span>›</span>
-        <i />
-      </div>
-    </div>
-  )
-}
-
-function ForgeBrowser() {
-  return (
-    <div className="forge-browser-view">
-      <div className="forge-browser-address">
-        <span>‹</span>
-        <span>›</span>
-        <span>↻</span>
-        <div>Search or enter address</div>
-        <Icon name="plus" />
-      </div>
-      <div className="forge-browser-empty">
-        <span>◉</span>
-        <strong>New tab</strong>
-        <small>Enter an address to browse</small>
-      </div>
+        <Icon name="agents" />
+      </button>
     </div>
   )
 }
