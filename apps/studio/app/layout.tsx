@@ -5,7 +5,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Orvel Studio',
-  description: 'Create, teach, evaluate, and deploy AI agents with Orvel.',
+  description: 'Create, teach, evaluate, and manage AI agents.',
 }
 
 export default function RootLayout({

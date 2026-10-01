@@ -15,6 +15,7 @@ import {
   updateAgentAction,
 } from '../../actions'
 import {
+  AgentSectionNav,
   Icon,
   StudioShell,
   type StudioNavigationAgent,
@@ -96,8 +97,6 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
     conversation?.title ??
     (firstUserMessage?.content.replace(/\s+/g, ' ').trim() ||
       (conversation ? 'New chat' : 'New conversation'))
-  const shortChatTitle =
-    chatTitle.length > 72 ? `${chatTitle.slice(0, 71).trimEnd()}…` : chatTitle
   const navigationAgents: StudioNavigationAgent[] =
     await createStudioNavigation(allAgents)
 
@@ -117,30 +116,48 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
         >
           <div>
             <p className="eyebrow agent-context-label">Agent workspace</p>
-            <h1>{agent.name}</h1>
-            <p>
-              {tab === 'playground' && conversation
-                ? shortChatTitle
-                : (agent.description ?? agent.instructions)}
-            </p>
+            {tab === 'playground' ? (
+              <>
+                <h1>{agent.name}</h1>
+                <p className="chat-agent-subtitle">
+                  {conversation
+                    ? chatTitle
+                    : 'Start a conversation with this agent.'}
+                </p>
+              </>
+            ) : (
+              <>
+                <h1>{agent.name}</h1>
+                <p>{agent.description ?? agent.instructions}</p>
+              </>
+            )}
           </div>
           <div className="agent-header-actions">
-            <div className="model-chip">
-              {agent.brain.provider} · {agent.brain.model}
-            </div>
             {tab === 'playground' ? (
-              <form action={startConversationAction}>
-                <input name="agentId" type="hidden" value={agentId} />
-                <button
-                  className="button button-quiet new-conversation-action"
-                  type="submit"
-                >
-                  <Icon name="plus" /> New chat
-                </button>
-              </form>
-            ) : null}
+              <>
+                <div className="model-chip">
+                  {agent.brain.provider} · {agent.brain.model}
+                </div>
+                <form action={startConversationAction}>
+                  <input name="agentId" type="hidden" value={agentId} />
+                  <button
+                    className="button button-quiet new-conversation-action"
+                    type="submit"
+                  >
+                    <Icon name="plus" />
+                    New conversation
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div className="model-chip">
+                {agent.brain.provider} · {agent.brain.model}
+              </div>
+            )}
           </div>
         </section>
+
+        <AgentSectionNav agentId={agentId} currentSection={tab} />
 
         {parameters.error ? (
           <p className="alert" role="alert">
@@ -171,7 +188,7 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
                   className="button button-primary"
                   href={`/agents/${agentId}?tab=playground`}
                 >
-                  Open Playground
+                  Open chat
                 </Link>
                 <Link
                   className="button button-quiet"
@@ -196,7 +213,7 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
               <article className="panel">
                 <p className="eyebrow">Knowledge</p>
                 <h2>
-                  {knowledge.length} text source
+                  {knowledge.length} knowledge source
                   {knowledge.length === 1 ? '' : 's'}
                 </h2>
                 <p>
@@ -265,12 +282,14 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
                   >
                     <input type="hidden" name="agentId" value={agentId} />
                     <textarea
+                      aria-label={`Message ${agent.name}`}
                       name="content"
                       required
                       rows={2}
-                      placeholder={`Message ${agent.name}…`}
+                      placeholder="Send a message…"
                     />
                     <FormSubmitButton
+                      disabled={!isProviderConfigured(agent.brain.provider)}
                       label="Start conversation"
                       pendingLabel="Starting conversation"
                       pendingStyle="spinner"
@@ -446,17 +465,18 @@ export default async function AgentPage({ params, searchParams }: PageProps) {
                       value={conversation.id}
                     />
                     <textarea
+                      aria-label={`Message ${agent.name}`}
                       name="content"
                       required
                       rows={3}
-                      placeholder={`Message ${agent.name}…`}
+                      placeholder="Send follow up…"
                     />
                     <FormSubmitButton
                       disabled={!isProviderConfigured(agent.brain.provider)}
-                      label="Send message"
-                      pendingLabel="Sending message"
+                      label="Send follow up"
+                      pendingLabel="Sending follow up"
                       pendingStyle="spinner"
-                      title="Send message"
+                      title="Send follow up"
                     >
                       <Icon name="send" />
                     </FormSubmitButton>

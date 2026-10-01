@@ -1,7 +1,6 @@
 import Link from 'next/link'
 
 import { AgentForm } from './agent-form'
-import { ForgeWelcomeComposer } from './forge-welcome-composer'
 import { Icon, StudioShell, type StudioNavigationAgent } from './studio-shell'
 import {
   getOllamaAvailability,
@@ -32,47 +31,40 @@ export default async function Home({ searchParams }: PageProps) {
   ])
 
   return (
-    <StudioShell
-      currentSection={view}
-      agents={navigationAgents}
-      landing={view === 'welcome'}
-    >
-      <main className="studio-main">
+    <StudioShell currentSection={view} agents={navigationAgents}>
+      <main
+        className={`studio-main${view === 'welcome' ? ' welcome-main' : ''}`}
+      >
         {view === 'welcome' ? (
           <section className="welcome-screen">
-            <div aria-hidden="true" className="forge-welcome-emblem">
-              <span>O</span>
-            </div>
-            <p className="eyebrow">ORVEL STUDIO</p>
-            <h1>
-              {agents.length
-                ? 'What are you working on?'
-                : 'Create an agent that learns from you.'}
-            </h1>
+            <p className="eyebrow">Orvel Studio</p>
+            <h1>Welcome to your workspace</h1>
             <p className="welcome-copy">
-              {agents.length
-                ? 'Choose an agent and start a conversation. Teach it, add knowledge, and refine the results as you go.'
-                : 'Start with a role and instructions, then shape its behavior through conversation.'}
+              Choose an agent from the sidebar to open its conversations,
+              knowledge, feedback, and evaluations.
             </p>
-            {agents.length ? (
-              <ForgeWelcomeComposer agents={agents} />
-            ) : (
-              <Link
-                className="button button-primary home-create-agent"
-                href="/?view=create"
-              >
-                <Icon name="plus" /> Create an agent
+            <div className="welcome-actions">
+              <Link className="welcome-action-card" href="/?view=create">
+                <Icon name="plus" />
+                <span>
+                  <strong>Create an agent</strong>
+                  <small>Set up a new agent for this workspace</small>
+                </span>
+                <Icon name="chevron" />
               </Link>
-            )}
-            {agents.length ? (
-              <div className="home-shortcuts forge-home-links">
-                <Link href="/?view=agents">
-                  <Icon name="agents" /> Browse agents
-                </Link>
-                <Link href="/?view=create">
-                  <Icon name="plus" /> New agent
-                </Link>
-              </div>
+              <Link className="welcome-action-card" href="/?view=agents">
+                <Icon name="agents" />
+                <span>
+                  <strong>Browse agents</strong>
+                  <small>See and manage the agents you have created</small>
+                </span>
+                <Icon name="chevron" />
+              </Link>
+            </div>
+            {!agents.length ? (
+              <p className="welcome-agent-hint">
+                Create an agent to start a conversation.
+              </p>
             ) : null}
           </section>
         ) : null}
@@ -83,26 +75,28 @@ export default async function Home({ searchParams }: PageProps) {
               <div>
                 <p className="eyebrow">Workspace</p>
                 <h1>Agents</h1>
-                <p>Create and manage your AI agents.</p>
+                <p>Create, configure, and work with your agents.</p>
               </div>
               <Link className="button button-primary" href="/?view=create">
-                <Icon name="plus" /> New agent
+                <Icon name="plus" /> Create agent
               </Link>
             </header>
             <section aria-label="Your agents" className="agents-grid">
               {agents.length === 0 ? (
                 <div className="empty-panel">
                   <strong>Create your first agent</strong>
-                  <p>Give it a name and purpose to get started.</p>
+                  <p>
+                    Give it a name, purpose, and instructions to get started.
+                  </p>
                   <Link className="button button-primary" href="/?view=create">
-                    Create an agent
+                    Create agent
                   </Link>
                 </div>
               ) : (
                 agents.map((agent) => (
                   <Link
                     className="agent-card"
-                    href={`/agents/${agent.id}?tab=playground`}
+                    href={`/agents/${agent.id}?tab=overview`}
                     key={agent.id}
                   >
                     <span
@@ -112,7 +106,7 @@ export default async function Home({ searchParams }: PageProps) {
                     </span>
                     <span className="agent-card-content">
                       <strong>{agent.name}</strong>
-                      <span>{agent.description ?? agent.instructions}</span>
+                      <span>{agent.description || agent.instructions}</span>
                       <small>
                         {agent.brain.provider} · {agent.brain.model}
                       </small>
@@ -135,7 +129,7 @@ export default async function Home({ searchParams }: PageProps) {
                   ‹ Workspace
                 </Link>
                 <h1>New agent</h1>
-                <p>Start with a name and a clear purpose.</p>
+                <p>Give it a name, purpose, and clear instructions.</p>
               </div>
               <Link className="button button-quiet" href="/">
                 Cancel
